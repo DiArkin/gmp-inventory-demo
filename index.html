@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GMP Inventory Simulator</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 0; background:#0b1220; color:#e8eefc; }
+    header { padding: 18px 20px; background:#0f1a33; border-bottom:1px solid #22335f; }
+    header h1 { margin:0; font-size:18px; font-weight:700; letter-spacing:.2px; }
+    header .sub { opacity:.8; font-size:12px; margin-top:4px; }
+
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px 16px 26px; }
+    .tabs { display:flex; gap:8px; margin: 12px 0 14px; flex-wrap: wrap; }
+    .tabbtn {
+      border:1px solid #2a3c70; background:#0f1a33; color:#e8eefc;
+      padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:600; font-size:13px;
+    }
+    .tabbtn.active { background:#1a2d5a; border-color:#3f5fb0; }
+    .card { background:#0f1a33; border:1px solid #22335f; border-radius:18px; padding:14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .row { display:flex; gap:12px; flex-wrap: wrap; }
+    .row > * { flex:1; min-width: 240px; }
+    label { display:block; font-size:12px; opacity:.85; margin-bottom:6px; }
+    input, select, button, textarea {
+      font: inherit; border-radius:12px; border:1px solid #2a3c70; background:#0b1220;
+      color:#e8eefc; padding:10px 12px; outline:none;
+    }
+    input:focus, select:focus, textarea:focus { border-color:#6d8cff; }
+    button { cursor:pointer; font-weight:700; }
+    button.primary { background:#2b64ff; border-color:#2b64ff; }
+    button.danger { background:#c7363a; border-color:#c7363a; }
+    button.ghost { background:transparent; }
+    .hint { font-size:12px; opacity:.8; line-height:1.35; }
+    .table { width:100%; border-collapse: collapse; margin-top:10px; overflow:auto; }
+    .table th, .table td { padding:10px 10px; border-bottom:1px solid #22335f; font-size:12.5px; vertical-align: top; }
+    .table th { text-align:left; font-size:12px; opacity:.9; }
+    .pill { display:inline-block; padding:4px 8px; border-radius:999px; font-size:11px; font-weight:700; }
+    .ok { background:#1c3; color:#061; }
+    .warn { background:#ffb020; color:#3b2200; }
+    .bad { background:#ff4d6d; color:#36000a; }
+    .muted { opacity:.75; }
+    .right { text-align:right; }
+    .small { font-size:11px; opacity:.8; }
+    .split { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .hide { display:none; }
+    .topbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GMP Inventory Simulator</h1>
+    <div class="sub">Web app demo — Warehouse ⇄ Kit deduction + Audit Log (EN). Data stored locally in your browser.</div>
+  </header>
+
+  <div class="wrap">
+    <div class="tabs">
+      <button class="tabbtn active" data-tab="warehouse">Warehouse</button>
+      <button class="tabbtn" data-tab="kit">Kit</button>
+      <button class="tabbtn" data-tab="log">Audit Log</button>
+      <button class="tabbtn" data-tab="admin">Admin</button>
+    </div>
+
+    <!-- Warehouse -->
+    <section id="warehouse" class="card">
+      <div class="split">
+        <div class="topbar">
+          <input id="whSearch" placeholder="Search: product / manufacturer / IRN / lot…" style="min-width:320px;">
+          <select id="whSort">
+            <option value="product">Sort: Product</option>
+            <option value="expiry">Sort: Expiry</option>
+            <option value="available">Sort: Qty Available</option>
+          </select>
+          <button class="ghost" id="resetAll">Reset to seed data</button>
+        </div>
+        <div class="hint">
+          Status is based on expiry (≤120 days = warning) and negative stock = critical.
+        </div>
+      </div>
+
+      <table class="table" id="whTable">
+        <thead>
+          <tr>
+            <th>Item_ID</th><th>Product</th><th>Manufacturer</th><th>IRN</th><th>Lot</th><th>Expiry</th>
+            <th class="right">On Hand</th><th class="right">Picked</th><th class="right">Available</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="small muted">Tip for presentation: go to Kit → pick items → return to Warehouse and show “Available” changing live.</div>
+    </section>
+
+    <!-- Kit -->
+    <section id="kit" class="card hide">
+      <div class="split">
+        <div class="topbar">
+          <input id="kitName" value="WH Demo Kit A" style="min-width:220px;">
+          <select id="kitItem"></select>
+          <input id="kitQty" type="number" min="1" step="1" value="1" style="width:110px;">
+          <input id="kitUser" value="DemoUser" style="min-width:140px;">
+          <button class="primary" id="pickBtn">Pick for kit</button>
+        </div>
+        <div class="hint">
+          Picking creates an audit record with timestamp and deducts from warehouse (by Item_ID).
+        </div>
+      </div>
+
+      <table class="table" id="kitTable">
+        <thead>
+          <tr>
+            <th>Kit</th><th>Timestamp</th><th>User</th><th>Item_ID</th><th>Product</th><th>Lot</th><th class="right">Picked_Qty</th><th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Log -->
+    <section id="log" class="card hide">
+      <div class="split">
+        <div class="topbar">
+          <input id="logSearch" placeholder="Search log…" style="min-width:320px;">
+          <button class="ghost" id="exportJson">Export JSON</button>
+          <button class="danger" id="clearLog">Clear log</button>
+        </div>
+        <div class="hint">
+          This is your audit trail for demo purposes. (For strict GMP immutability you’d use a backend + roles.)
+        </div>
+      </div>
+
+      <table class="table" id="logTable">
+        <thead>
+          <tr>
+            <th>Timestamp</th><th>Action</th><th>User</th><th>Item_ID</th><th>Product</th><th>Lot</th><th class="right">Qty_Change</th><th>Comment</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Admin -->
+    <section id="admin" class="card hide">
+      <div class="row">
+        <div>
+          <label>Import warehouse items (CSV). Columns: Item_ID,Product,Manufacturer,IRN,Lot,Expiry,Qty_On_Hand</label>
+          <textarea id="csvImport" rows="10" style="width:100%;" spellcheck="false"></textarea>
+          <div class="topbar" style="margin-top:10px;">
+            <button class="primary" id="importBtn">Import CSV to Warehouse</button>
+            <button class="ghost" id="copySeed">Copy seed CSV</button>
+          </div>
+          <div class="hint" style="margin-top:8px;">
+            Expiry formats supported: <span class="mono">MM.YYYY</span> or <span class="mono">DD.MM.YYYY</span>.
+          </div>
+        </div>
+        <div>
+          <label>Quick add / adjust stock</label>
+          <select id="adjItem"></select>
+          <input id="adjQty" type="number" step="1" value="1" />
+          <select id="adjType">
+            <option value="add">Add (incoming)</option>
+            <option value="subtract">Subtract (picked/used)</option>
+          </select>
+          <input id="adjUser" value="DemoUser" />
+          <input id="adjComment" placeholder="Comment (optional)" />
+          <button class="primary" id="adjBtn" style="margin-top:10px;">Apply adjustment</button>
+          <div class="hint" style="margin-top:10px;">
+            This writes to Audit Log and changes Qty_On_Hand.
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+<script>
+  // ---------- Seed data (from your screenshot) ----------
+  const SEED_WAREHOUSE = [
+    {id:"WH-0001", product:"Human Albumin", manufacturer:"Kedrion", irn:"1354/25", lot:"252946", expiry:"08.2028", onHand:20},
+    {id:"WH-0002", product:"Human Albumin", manufacturer:"Kedrion", irn:"1290/25", lot:"232944", expiry:"09.2026", onHand:4},
+
+    {id:"WH-0003", product:"Opti-MEM", manufacturer:"Gibco", irn:"1254/25", lot:"3021876", expiry:"05.2026", onHand:3},
+    {id:"WH-0004", product:"Opti-MEM", manufacturer:"Gibco", irn:"1090/25", lot:"2995964", expiry:"02.2026", onHand:4},
+    {id:"WH-0005", product:"Opti-MEM", manufacturer:"Gibco", irn:"1068/25", lot:"2995964", expiry:"02.2026", onHand:1},
+    {id:"WH-0006", product:"Opti-MEM", manufacturer:"Gibco", irn:"1278/25", lot:"3150493", expiry:"11.2026", onHand:5},
+
+    {id:"WH-0007", product:"CryoStor 100 mL", manufacturer:"BioLife Solutions", irn:"1376/26", lot:"25093", expiry:"05.2027", onHand:3},
+    {id:"WH-0008", product:"CryoStor 100 mL", manufacturer:"BioLife Solutions", irn:"1312/25", lot:"25093", expiry:"05.2027", onHand:1},
+    {id:"WH-0009", product:"CryoStor 100 mL", manufacturer:"BioLife Solutions", irn:"1232/25", lot:"24239", expiry:"10.2026", onHand:2},
+
+    {id:"WH-0010", product:"CryoStor 16 mL", manufacturer:"BioLife Solutions", irn:"1388/26", lot:"24244", expiry:"10.2026", onHand:5},
+    {id:"WH-0011", product:"CryoStor 16 mL", manufacturer:"BioLife Solutions", irn:"1353/25", lot:"24191", expiry:"08.2026", onHand:4},
+    {id:"WH-0012", product:"CryoStor 16 mL", manufacturer:"BioLife Solutions", irn:"1341/25", lot:"24191", expiry:"08.2026", onHand:13},
+    {id:"WH-0013", product:"CryoStor 16 mL", manufacturer:"BioLife Solutions", irn:"1318/25", lot:"24191", expiry:"08.2026", onHand:1},
+
+    {id:"WH-0014", product:"Pulmozyme amp.", manufacturer:"Roche", irn:"1291/25", lot:"3615002", expiry:"03.2027", onHand:60},
+    {id:"WH-0015", product:"Pulmozyme amp.", manufacturer:"Roche", irn:"675/24", lot:"3568482", expiry:"01.2026", onHand:12},
+
+    {id:"WH-0016", product:"T Cell TransAct", manufacturer:"Miltenyi Biotec", irn:"1193/25", lot:"253663", expiry:"04.2026", onHand:2},
+
+    // CRISPER row (as seen: IRN looks like long number, Exp shown as date, Lot shown as 1329/25)
+    {id:"WH-0017", product:"GMP T Cell TransAct", manufacturer:"Miltenyi Biotec", irn:"6241000078", lot:"1329/25", expiry:"25.09.2026", onHand:5},
+
+    {id:"WH-0018", product:"DMEM", manufacturer:"Gibco", irn:"1257/25", lot:"3174722", expiry:"03.2026", onHand:19},
+    {id:"WH-0019", product:"DMEM", manufacturer:"Gibco", irn:"1247/25", lot:"3144456", expiry:"03.2026", onHand:5},
+    {id:"WH-0020", product:"DMEM", manufacturer:"ATCC", irn:"1325/25", lot:"80131251", expiry:"31.05.2026", onHand:5},
+    {id:"WH-0021", product:"DMEM", manufacturer:"ATCC", irn:"1389/26", lot:"80131255", expiry:"31.05.2026", onHand:10},
+
+    {id:"WH-0022", product:"AIM V Medium", manufacturer:"Gibco", irn:"1287/25", lot:"3231045", expiry:"09.2026", onHand:4},
+  ];
+
+  // ---------- Storage ----------
+  const LS_KEYS = { wh:"gmp_wh_v1", kit:"gmp_kit_v1", log:"gmp_log_v1" };
+
+  function loadOrSeed(key, seed) {
+    const raw = localStorage.getItem(key);
+    if (!raw) { localStorage.setItem(key, JSON.stringify(seed)); return structuredClone(seed); }
+    try { return JSON.parse(raw); } catch { localStorage.setItem(key, JSON.stringify(seed)); return structuredClone(seed); }
+  }
+  function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+  let warehouse = loadOrSeed(LS_KEYS.wh, SEED_WAREHOUSE);
+  let kitPicks = loadOrSeed(LS_KEYS.kit, []);
+  let auditLog = loadOrSeed(LS_KEYS.log, [
+    {ts:new Date().toISOString(), action:"INIT LOAD", user:"System", itemId:"—", product:"Loaded screenshot items", lot:"—", qty:0, comment:"Demo initialization"}
+  ]);
+
+  // ---------- Helpers ----------
+  function parseExpiry(s) {
+    s = (s||"").trim();
+    // MM.YYYY
+    if (/^\d{2}\.\d{4}$/.test(s)) {
+      const [mm, yyyy] = s.split(".");
+      return new Date(Number(yyyy), Number(mm)-1, 1);
+    }
+    // DD.MM.YYYY
+    if (/^\d{2}\.\d{2}\.\d{4}$/.test(s)) {
+      const [dd, mm, yyyy] = s.split(".");
+      return new Date(Number(yyyy), Number(mm)-1, Number(dd));
+    }
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function daysUntil(d) {
+    if (!d) return null;
+    const now = new Date();
+    const diff = d.getTime() - now.getTime();
+    return Math.floor(diff / (1000*60*60*24));
+  }
+  function fmtTS(iso) {
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, {year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"});
+  }
+
+  function calcPickedByItem() {
+    const map = {};
+    for (const k of kitPicks) map[k.itemId] = (map[k.itemId] || 0) + Number(k.qty||0);
+    return map;
+  }
+
+  function statusFor(item, available) {
+    if (available < 0) return {text:"NEGATIVE STOCK", cls:"bad"};
+    const exp = parseExpiry(item.expiry);
+    const du = daysUntil(exp);
+    if (du !== null && du <= 120) return {text:"EXPIRING SOON", cls:"warn"};
+    return {text:"OK", cls:"ok"};
+  }
+
+  // ---------- Render ----------
+  const whBody = document.querySelector("#whTable tbody");
+  const kitBody = document.querySelector("#kitTable tbody");
+  const logBody = document.querySelector("#logTable tbody");
+
+  function renderWarehouse() {
+    const pickedMap = calcPickedByItem();
+
+    // Build list with computed columns
+    const list = warehouse.map(it => {
+      const picked = pickedMap[it.id] || 0;
+      const available = Number(it.onHand) - Number(picked);
+      return { ...it, picked, available };
+    });
+
+    // Search
+    const q = (document.getElementById("whSearch").value || "").toLowerCase().trim();
+    let filtered = q ? list.filter(it => {
+      const blob = `${it.id} ${it.product} ${it.manufacturer} ${it.irn} ${it.lot} ${it.expiry}`.toLowerCase();
+      return blob.includes(q);
+    }) : list;
+
+    // Sort
+    const sort = document.getElementById("whSort").value;
+    filtered.sort((a,b)=>{
+      if (sort==="product") return a.product.localeCompare(b.product);
+      if (sort==="expiry") return (parseExpiry(a.expiry)?.getTime()||1e18) - (parseExpiry(b.expiry)?.getTime()||1e18);
+      if (sort==="available") return a.available - b.available;
+      return 0;
+    });
+
+    whBody.innerHTML = "";
+    for (const it of filtered) {
+      const st = statusFor(it, it.available);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="mono">${it.id}</td>
+        <td>${it.product}</td>
+        <td>${it.manufacturer}</td>
+        <td class="mono">${it.irn}</td>
+        <td class="mono">${it.lot}</td>
+        <td class="mono">${it.expiry}</td>
+        <td class="right mono">${it.onHand}</td>
+        <td class="right mono">${it.picked}</td>
+        <td class="right mono">${it.available}</td>
+        <td><span class="pill ${st.cls}">${st.text}</span></td>
+      `;
+      whBody.appendChild(tr);
+    }
+
+    // Update selectors
+    const itemSelect = document.getElementById("kitItem");
+    const adjItem = document.getElementById("adjItem");
+    itemSelect.innerHTML = "";
+    adjItem.innerHTML = "";
+    for (const it of warehouse) {
+      const opt = document.createElement("option");
+      opt.value = it.id;
+      opt.textContent = `${it.id} — ${it.product} — Lot ${it.lot} (IRN ${it.irn})`;
+      itemSelect.appendChild(opt);
+
+      const opt2 = opt.cloneNode(true);
+      adjItem.appendChild(opt2);
+    }
+  }
+
+  function renderKit() {
+    kitBody.innerHTML = "";
+    const sorted = [...kitPicks].sort((a,b)=> new Date(b.ts) - new Date(a.ts));
+    for (const k of sorted) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${k.kit}</td>
+        <td class="mono">${fmtTS(k.ts)}</td>
+        <td>${k.user}</td>
+        <td class="mono">${k.itemId}</td>
+        <td>${k.product}</td>
+        <td class="mono">${k.lot}</td>
+        <td class="right mono">${k.qty}</td>
+        <td class="right"><button class="danger" data-del="${k.pickId}">Undo</button></td>
+      `;
+      kitBody.appendChild(tr);
+    }
+
+    kitBody.querySelectorAll("button[data-del]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.getAttribute("data-del");
+        undoPick(id);
+      });
+    });
+  }
+
+  function renderLog() {
+    const q = (document.getElementById("logSearch").value || "").toLowerCase().trim();
+    const filtered = q ? auditLog.filter(e => {
+      const blob = `${e.ts} ${e.action} ${e.user} ${e.itemId} ${e.product} ${e.lot} ${e.qty} ${e.comment}`.toLowerCase();
+      return blob.includes(q);
+    }) : auditLog;
+
+    const sorted = [...filtered].sort((a,b)=> new Date(b.ts) - new Date(a.ts));
+    logBody.innerHTML = "";
+    for (const e of sorted) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="mono">${fmtTS(e.ts)}</td>
+        <td>${e.action}</td>
+        <td>${e.user}</td>
+        <td class="mono">${e.itemId}</td>
+        <td>${e.product}</td>
+        <td class="mono">${e.lot}</td>
+        <td class="right mono">${e.qty}</td>
+        <td class="muted">${e.comment || ""}</td>
+      `;
+      logBody.appendChild(tr);
+    }
+  }
+
+  function rerenderAll(){ renderWarehouse(); renderKit(); renderLog(); }
+
+  // ---------- Actions ----------
+  function addLog(entry) {
+    auditLog.push(entry);
+    save(LS_KEYS.log, auditLog);
+  }
+
+  function pickForKit() {
+    const kit = document.getElementById("kitName").value.trim() || "Unnamed kit";
+    const itemId = document.getElementById("kitItem").value;
+    const qty = Math.max(1, Number(document.getElementById("kitQty").value || 1));
+    const user = document.getElementById("kitUser").value.trim() || "User";
+    const item = warehouse.find(x=>x.id===itemId);
+    if (!item) return;
+
+    const pickId = crypto.randomUUID();
+    const ts = new Date().toISOString();
+
+    kitPicks.push({
+      pickId, kit, ts, user,
+      itemId, qty,
+      product:item.product,
+      lot:item.lot
+    });
+    save(LS_KEYS.kit, kitPicks);
+
+    addLog({
+      ts, action:"PICKED", user,
+      itemId, product:item.product, lot:item.lot,
+      qty:-qty, comment:`Picked for kit: ${kit}`
+    });
+
+    rerenderAll();
+  }
+
+  function undoPick(pickId) {
+    const idx = kitPicks.findIndex(x=>x.pickId===pickId);
+    if (idx < 0) return;
+    const p = kitPicks[idx];
+    kitPicks.splice(idx,1);
+    save(LS_KEYS.kit, kitPicks);
+
+    addLog({
+      ts:new Date().toISOString(), action:"UNDO PICK", user:p.user,
+      itemId:p.itemId, product:p.product, lot:p.lot,
+      qty:+Number(p.qty), comment:`Undo pick for kit: ${p.kit}`
+    });
+
+    rerenderAll();
+  }
+
+  function resetAll() {
+    if (!confirm("Reset warehouse, kit and log back to seed data?")) return;
+    warehouse = structuredClone(SEED_WAREHOUSE);
+    kitPicks = [];
+    auditLog = [{ts:new Date().toISOString(), action:"INIT LOAD", user:"System", itemId:"—", product:"Loaded screenshot items", lot:"—", qty:0, comment:"Demo initialization"}];
+    save(LS_KEYS.wh, warehouse);
+    save(LS_KEYS.kit, kitPicks);
+    save(LS_KEYS.log, auditLog);
+    rerenderAll();
+  }
+
+  function importCSV() {
+    const text = document.getElementById("csvImport").value.trim();
+    if (!text) return alert("Paste CSV first.");
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    const headers = lines.shift().split(",").map(s=>s.trim());
+    const idx = (name)=> headers.findIndex(h=>h.toLowerCase()===name.toLowerCase());
+
+    const required = ["Item_ID","Product","Manufacturer","IRN","Lot","Expiry","Qty_On_Hand"];
+    for (const r of required) if (idx(r) < 0) return alert("Missing column: " + r);
+
+    const out = [];
+    for (const line of lines) {
+      const cols = line.split(",").map(s=>s.trim());
+      out.push({
+        id: cols[idx("Item_ID")],
+        product: cols[idx("Product")],
+        manufacturer: cols[idx("Manufacturer")],
+        irn: cols[idx("IRN")],
+        lot: cols[idx("Lot")],
+        expiry: cols[idx("Expiry")],
+        onHand: Number(cols[idx("Qty_On_Hand")] || 0),
+      });
+    }
+    warehouse = out;
+    save(LS_KEYS.wh, warehouse);
+    addLog({ts:new Date().toISOString(), action:"IMPORT", user:"System", itemId:"—", product:"Warehouse import", lot:"—", qty:0, comment:`Imported ${out.length} items from CSV`});
+    rerenderAll();
+    alert("Imported.");
+  }
+
+  function seedCSV() {
+    const header = "Item_ID,Product,Manufacturer,IRN,Lot,Expiry,Qty_On_Hand";
+    const lines = warehouse.map(it =>
+      [it.id,it.product,it.manufacturer,it.irn,it.lot,it.expiry,it.onHand].join(",")
+    );
+    return [header, ...lines].join("\n");
+  }
+
+  function applyAdjustment() {
+    const itemId = document.getElementById("adjItem").value;
+    const qty = Math.max(1, Number(document.getElementById("adjQty").value || 1));
+    const type = document.getElementById("adjType").value;
+    const user = document.getElementById("adjUser").value.trim() || "User";
+    const comment = document.getElementById("adjComment").value.trim();
+    const item = warehouse.find(x=>x.id===itemId);
+    if (!item) return;
+
+    const delta = (type==="add") ? qty : -qty;
+    item.onHand = Number(item.onHand) + delta;
+    save(LS_KEYS.wh, warehouse);
+
+    addLog({
+      ts:new Date().toISOString(),
+      action: type==="add" ? "ADJUST +IN" : "ADJUST -OUT",
+      user, itemId:item.id, product:item.product, lot:item.lot,
+      qty: delta,
+      comment: comment || (type==="add" ? "Incoming stock" : "Manual subtraction")
+    });
+
+    rerenderAll();
+  }
+
+  function exportJSON() {
+    const blob = new Blob([JSON.stringify({warehouse, kitPicks, auditLog}, null, 2)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "gmp_inventory_export.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ---------- Tabs ----------
+  document.querySelectorAll(".tabbtn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      document.querySelectorAll(".tabbtn").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      const tab = btn.getAttribute("data-tab");
+      ["warehouse","kit","log","admin"].forEach(id=>{
+        document.getElementById(id).classList.toggle("hide", id!==tab);
+      });
+    });
+  });
+
+  // ---------- Wire up ----------
+  document.getElementById("pickBtn").addEventListener("click", pickForKit);
+  document.getElementById("whSearch").addEventListener("input", renderWarehouse);
+  document.getElementById("whSort").addEventListener("change", renderWarehouse);
+  document.getElementById("logSearch").addEventListener("input", renderLog);
+
+  document.getElementById("resetAll").addEventListener("click", resetAll);
+  document.getElementById("importBtn").addEventListener("click", importCSV);
+  document.getElementById("adjBtn").addEventListener("click", applyAdjustment);
+  document.getElementById("exportJson").addEventListener("click", exportJSON);
+  document.getElementById("clearLog").addEventListener("click", ()=>{
+    if (!confirm("Clear audit log?")) return;
+    auditLog = [];
+    save(LS_KEYS.log, auditLog);
+    rerenderAll();
+  });
+  document.getElementById("copySeed").addEventListener("click", ()=>{
+    const t = seedCSV();
+    navigator.clipboard.writeText(t);
+    alert("Seed CSV copied to clipboard.");
+  });
+
+  // Initial render
+  rerenderAll();
+  // Pre-fill CSV area with seed for convenience
+  document.getElementById("csvImport").value = seedCSV();
+</script>
+</body>
+</html>
