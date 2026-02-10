@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>GMP Inventory Simulator — V1.3</title>
+<title>GMP Inventory Simulator — V1.4</title>
 
 <style>
 :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
 body{margin:0;background:#0b1220;color:#e8eefc}
 header{padding:16px 20px;background:#0f1a33;border-bottom:1px solid #22335f}
 h1{margin:0;font-size:18px}
-.sub{font-size:12px;opacity:.7}
-.wrap{max-width:1300px;margin:auto;padding:16px}
+.sub{font-size:12px;opacity:.75}
+.wrap{max-width:1400px;margin:auto;padding:16px}
 
 .tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.tabbtn{padding:10px 14px;border-radius:12px;border:1px solid #2a3c70;background:#0f1a33;color:#e8eefc;font-weight:600;cursor:pointer}
+.tabbtn{padding:10px 14px;border-radius:12px;border:1px solid #2a3c70;background:#0f1a33;color:#e8eefc;font-weight:700;cursor:pointer}
 .tabbtn.active{background:#1a2d5a;border-color:#3f5fb0}
 
 .card{background:#0f1a33;border:1px solid #22335f;border-radius:18px;padding:14px}
@@ -25,7 +25,7 @@ th,td{border-bottom:1px solid #22335f;padding:8px;font-size:12px;vertical-align:
 th{text-align:left}
 .right{text-align:right}
 
-.pill{padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}
+.pill{padding:4px 8px;border-radius:999px;font-size:11px;font-weight:900;display:inline-block}
 .ok{background:#1c3;color:#061}
 .low{background:#ffb020;color:#3b2200}
 .exp{background:#ff7a18;color:#3b2200}
@@ -41,42 +41,56 @@ input,select,button,textarea{
 border-radius:10px;border:1px solid #2a3c70;
 background:#0b1220;color:#e8eefc;padding:8px 10px
 }
-button.primary{background:#2b64ff;border-color:#2b64ff;font-weight:800}
+button.primary{background:#2b64ff;border-color:#2b64ff;font-weight:900}
 button.danger{background:#c7363a;border-color:#c7363a}
 button.ghost{background:transparent}
-
-.kv{display:grid;grid-template-columns:160px 1fr;gap:6px 12px;font-size:12px}
-.sectionTitle{margin-top:14px;font-weight:900;font-size:13px}
-.doc{display:flex;gap:8px;align-items:center;font-size:12px;flex-wrap:wrap}
-.doc a{color:#9bb6ff}
+.small{font-size:12px;opacity:.85}
 .hint{font-size:12px;opacity:.8;line-height:1.35}
 .topbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 hr{border:0;border-top:1px solid #22335f;margin:14px 0}
 
+.kv{display:grid;grid-template-columns:170px 1fr;gap:6px 12px;font-size:12px}
+.sectionTitle{margin-top:14px;font-weight:950;font-size:13px}
+.doc{display:flex;gap:8px;align-items:center;font-size:12px;flex-wrap:wrap}
+.doc a{color:#9bb6ff}
+.badge{padding:2px 8px;border:1px solid #2a3c70;border-radius:999px;font-size:11px;opacity:.9}
+
 /* Modals */
 .modalBg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:10;padding:16px}
-.modal{background:#0f1a33;border-radius:18px;border:1px solid #22335f;padding:14px;width:min(980px,96vw);max-height:88vh;overflow:auto}
+.modal{background:#0f1a33;border-radius:18px;border:1px solid #22335f;padding:14px;width:min(1000px,96vw);max-height:88vh;overflow:auto}
 .modalHeader{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
-.modalTitle{font-weight:950}
+.modalTitle{font-weight:1000}
 
-/* Print only report modal (clean A4) */
-@media print {
-  body{background:#fff;color:#000}
-  header,.tabs,#warehouse,#kit,#log,#reports{display:none!important}
-  #cardBg{display:none!important}
-  #reportBg{display:flex!important;position:static!important;background:transparent!important;padding:0!important}
-  #reportModal{border:none!important;box-shadow:none!important;background:#fff!important;color:#000!important;max-height:none!important;overflow:visible!important}
-  .noPrint{display:none!important}
-  table th, table td{border-bottom:1px solid #ccc!important;color:#000!important}
-  .pill{border:1px solid #888!important}
+/* ✅ Print: show ONLY reportBg content */
+@media print{
+  body * { visibility:hidden !important; }
+  #reportBg, #reportBg * { visibility:visible !important; }
+  #reportBg{
+    display:block !important;
+    position:fixed !important;
+    inset:0 !important;
+    background:#fff !important;
+    padding:0 !important;
+  }
+  #reportModal{
+    background:#fff !important;
+    color:#000 !important;
+    border:none !important;
+    border-radius:0 !important;
+    max-height:none !important;
+    overflow:visible !important;
+    width:100% !important;
+  }
+  .noPrint{display:none !important;}
+  table th, table td{border-bottom:1px solid #ccc !important;color:#000 !important}
 }
 </style>
 </head>
 
 <body>
 <header>
-  <h1>GMP Inventory Simulator — V1.3</h1>
-  <div class="sub">Warehouse • Kit • Audit Log • Inventory Card • Documents • Reports • Storage & Location</div>
+  <h1>GMP Inventory Simulator — V1.4</h1>
+  <div class="sub">Stable data model • Admin add/adjust • Working print reports • Kit search • Storage & Location</div>
 </header>
 
 <div class="wrap">
@@ -85,6 +99,7 @@ hr{border:0;border-top:1px solid #22335f;margin:14px 0}
     <button class="tabbtn" data-tab="kit">Kit</button>
     <button class="tabbtn" data-tab="log">Audit Log</button>
     <button class="tabbtn" data-tab="reports">Reports</button>
+    <button class="tabbtn" data-tab="admin">Admin</button>
   </div>
 
   <!-- Warehouse -->
@@ -99,14 +114,18 @@ hr{border:0;border-top:1px solid #22335f;margin:14px 0}
       <span class="hint" style="margin-left:6px">Sort:</span>
       <select id="whSort">
         <option value="product">Product</option>
+        <option value="irn">IRN</option>
         <option value="expiry">Expiry</option>
-        <option value="available">Available</option>
+        <option value="onhand">On Hand</option>
         <option value="location">Location</option>
         <option value="storage">Storage</option>
+        <option value="status">Status</option>
       </select>
+
+      <input id="whSearch" placeholder="Search IRN / product / location…" style="min-width:280px"/>
     </div>
 
-    <div class="hint">Click Product/IRN to open Inventory Card (with documents and logs).</div>
+    <div class="hint">Click IRN/Product to open Inventory Card. Warehouse is view-only; actions in Kit/Admin.</div>
 
     <table class="table">
       <thead>
@@ -117,9 +136,8 @@ hr{border:0;border-top:1px solid #22335f;margin:14px 0}
           <th>Expiry</th>
           <th>Storage</th>
           <th>Location</th>
+          <th class="right">Min</th>
           <th class="right">On Hand</th>
-          <th class="right">Picked</th>
-          <th class="right">Available</th>
           <th>Status</th>
         </tr>
       </thead>
@@ -135,20 +153,24 @@ hr{border:0;border-top:1px solid #22335f;margin:14px 0}
         <option value="PICK">Pick</option>
         <option value="RETURN">Return</option>
       </select>
-      <select id="kitItem"></select>
+
+      <input id="kitSearch" placeholder="Search IRN or Product (free typing)..." style="min-width:300px"/>
+      <select id="kitItem" style="min-width:340px"></select>
+
       <input id="kitQty" type="number" min="1" value="1" style="width:110px"/>
       <input id="kitUser" value="Operator" style="min-width:140px"/>
+      <input id="kitComment" placeholder="Comment / purpose (optional)" style="min-width:220px"/>
       <button class="primary" id="kitSubmit">Submit</button>
     </div>
 
     <div class="hint">
-      Safeguards: Pick cannot exceed Available. Return cannot exceed net picked for this kit.
+      Safeguards: Pick cannot exceed On Hand. Return cannot exceed net picked for this kit.
     </div>
 
     <table class="table">
       <thead>
         <tr>
-          <th>Date &amp; Time</th><th>Kit</th><th>Action</th><th>IRN</th><th>Lot</th><th class="right">Qty</th><th>User</th>
+          <th>Date &amp; Time</th><th>Kit</th><th>Action</th><th>IRN</th><th>Product</th><th>Lot</th><th class="right">Qty</th><th>User</th><th>Comment</th>
         </tr>
       </thead>
       <tbody id="kitTxBody"></tbody>
@@ -158,16 +180,16 @@ hr{border:0;border-top:1px solid #22335f;margin:14px 0}
   <!-- Audit Log -->
   <section id="log" class="card hide">
     <div class="topbar">
-      <input id="logSearch" placeholder="Search log…" style="min-width:260px"/>
+      <input id="logSearch" placeholder="Search log…" style="min-width:280px"/>
       <button class="ghost" id="exportJson">Export JSON</button>
-      <button class="danger" id="clearLog">Clear log</button>
+      <button class="danger" id="clearAll">Reset Demo (danger)</button>
     </div>
 
     <table class="table">
       <thead>
         <tr>
-          <th>Date &amp; Time</th><th>Product</th><th>IRN</th><th>Lot</th>
-          <th class="right">Qty</th><th>User</th><th>Comment (Kit)</th>
+          <th>Date &amp; Time</th><th>Action</th><th>Product</th><th>IRN</th><th>Lot</th>
+          <th class="right">Qty</th><th>User</th><th>Comment</th>
         </tr>
       </thead>
       <tbody id="logBody"></tbody>
@@ -190,26 +212,20 @@ hr{border:0;border-top:1px solid #22335f;margin:14px 0}
       </select>
       <input id="auditFrom" type="date"/>
       <input id="auditTo" type="date"/>
-      <button class="primary" id="runAuditReport">Generate</button>
-      <button class="ghost" id="printAuditReport">Print / Save as PDF</button>
+      <button class="primary" id="printAuditReport">Print / Save as PDF</button>
     </div>
-
-    <div id="auditReportPreview"></div>
 
     <hr>
 
     <div class="sectionTitle">2) Kit Record</div>
     <div class="topbar">
       <select id="kitSelect"></select>
-      <button class="primary" id="runKitReport">Generate</button>
-      <button class="ghost" id="printKitReport">Print / Save as PDF</button>
+      <button class="primary" id="printKitReport">Print / Save as PDF</button>
     </div>
-
-    <div id="kitReportPreview"></div>
 
     <hr>
 
-    <div class="sectionTitle">3) Weekly Stock Check</div>
+    <div class="sectionTitle">3) Stock Check</div>
     <div class="topbar">
       <select id="stockMode">
         <option value="problems">Problems first</option>
@@ -218,11 +234,52 @@ hr{border:0;border-top:1px solid #22335f;margin:14px 0}
         <option value="negative">Negative stock</option>
         <option value="all">All</option>
       </select>
-      <button class="primary" id="runStockReport">Generate</button>
-      <button class="ghost" id="printStockReport">Print / Save as PDF</button>
+      <button class="primary" id="printStockReport">Print / Save as PDF</button>
     </div>
 
-    <div id="stockReportPreview"></div>
+    <hr>
+
+    <div class="sectionTitle">4) Inventory Card PDF</div>
+    <div class="topbar">
+      <select id="itemSelect"></select>
+      <button class="primary" id="printItemCard">Print / Save as PDF</button>
+    </div>
+    <div class="hint">This prints the inventory card + documents list + last transactions.</div>
+  </section>
+
+  <!-- Admin -->
+  <section id="admin" class="card hide">
+    <div class="sectionTitle">Add new material</div>
+    <div class="topbar">
+      <input id="aProduct" placeholder="Product" style="min-width:220px"/>
+      <input id="aIRN" placeholder="IRN" style="width:120px"/>
+      <input id="aLot" placeholder="Lot" style="width:140px"/>
+      <input id="aExpiry" type="date" />
+      <input id="aStorage" placeholder="Storage (e.g. 2–8°C)" style="width:170px"/>
+      <input id="aLocation" placeholder="Location (e.g. WH-DFR-02 / upper shelf)" style="min-width:240px"/>
+      <input id="aMin" type="number" min="0" value="1" style="width:110px"/>
+      <input id="aOnHand" type="number" min="0" value="0" style="width:110px"/>
+      <button class="primary" id="addItem">Add</button>
+    </div>
+
+    <hr>
+
+    <div class="sectionTitle">Adjust stock (add / remove)</div>
+    <div class="topbar">
+      <select id="adjItem" style="min-width:360px"></select>
+      <select id="adjType">
+        <option value="ADD">Add stock</option>
+        <option value="REMOVE">Remove stock</option>
+      </select>
+      <input id="adjQty" type="number" min="1" value="1" style="width:110px"/>
+      <input id="adjUser" value="Admin" style="min-width:140px"/>
+      <input id="adjComment" placeholder="Reason (mandatory for remove)" style="min-width:260px"/>
+      <button class="primary" id="doAdjust">Apply</button>
+    </div>
+
+    <div class="hint">
+      For GMP realism: removing stock requires a reason (damaged, expired, consumed, etc.).
+    </div>
   </section>
 </div>
 
@@ -234,9 +291,9 @@ hr{border:0;border-top:1px solid #22335f;margin:14px 0}
         <div class="modalTitle" id="cardTitle"></div>
         <div class="sub" id="cardSubtitle"></div>
       </div>
-      <div class="topbar noPrint">
-        <button class="ghost" id="printCardBtn">Print / Save as PDF</button>
-        <button class="danger" id="closeCardBtn">Close</button>
+      <div class="topbar">
+        <button class="ghost" id="cardPrintBtn">Print (via Reports)</button>
+        <button class="danger" id="cardCloseBtn">Close</button>
       </div>
     </div>
 
@@ -245,27 +302,21 @@ hr{border:0;border-top:1px solid #22335f;margin:14px 0}
     <div class="sectionTitle">Documents</div>
     <div id="docs"></div>
 
-    <div class="topbar noPrint">
+    <div class="topbar">
       <select id="docType"><option>COA</option><option>SDS</option><option>Other</option></select>
       <input type="file" id="docFile"/>
       <button class="primary" id="uploadDoc">Upload</button>
     </div>
 
-    <div class="sectionTitle">Picked history</div>
+    <div class="sectionTitle">Recent transactions</div>
     <table class="table">
-      <thead><tr><th>Date &amp; Time</th><th>Kit</th><th>Action</th><th class="right">Qty</th><th>User</th></tr></thead>
-      <tbody id="pickedBody"></tbody>
-    </table>
-
-    <div class="sectionTitle">Audit log (this IRN + Lot)</div>
-    <table class="table">
-      <thead><tr><th>Date &amp; Time</th><th>Product</th><th>IRN</th><th>Lot</th><th class="right">Qty</th><th>User</th><th>Comment</th></tr></thead>
-      <tbody id="cardAuditBody"></tbody>
+      <thead><tr><th>Date &amp; Time</th><th>Action</th><th>Kit</th><th class="right">Qty</th><th>User</th><th>Comment</th></tr></thead>
+      <tbody id="cardTxBody"></tbody>
     </table>
   </div>
 </div>
 
-<!-- Report Print Modal -->
+<!-- Report Print Modal (ONLY thing printed) -->
 <div class="modalBg" id="reportBg">
   <div class="modal" id="reportModal">
     <div class="modalHeader noPrint">
@@ -283,108 +334,164 @@ hr{border:0;border-top:1px solid #22335f;margin:14px 0}
 </div>
 
 <script>
-/* ===== Storage key ===== */
-const LS_KEY = "gmp_v13_full";
+/* =======================
+   Storage + Migration
+   ======================= */
+const LS_KEY_V14 = "gmp_v14_stable";
 
-/* ===== Seed data (add your real data here) ===== */
-const seed = [
-  {
-    id:"1",
-    product:"Opti-MEM",
-    irn:"1254/25",
-    lot:"3021876",
-    expiry:"2026-05-01",
-    storage:"2–8°C",
-    location:"WH-ROOM1 / Shelf A",
-    onHand:3,
-    min:2,
-    docs:[]
-  },
-  {
-    id:"2",
-    product:"CryoStor 100 mL",
-    irn:"1376/26",
-    lot:"25093",
-    expiry:"2027-05-01",
-    storage:"-80°C",
-    location:"WH-DFR-02 / Upper shelf",
-    onHand:1,
-    min:2,
-    docs:[]
-  }
+/* Try import from older keys (your previous builds) */
+const LEGACY_KEYS = [
+  "gmp_v13_full",
+  "gmp_v13_reports",
+  "gmp_v12",
+  "gmp_v11",
+  "gmp_v10",
+  "gmp_v1"
 ];
 
-/* ===== State =====
-  wh: [{...}]
-  kit: [{ts, kit, action, id, irn, lot, qty, user}]
-  log: [{ts, product, irn, lot, qty, user, comment}]
-*/
-let S = (() => {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return { wh: seed, kit: [], log: [] };
-    const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.wh)) return { wh: seed, kit: [], log: [] };
-    return parsed;
-  } catch {
-    return { wh: seed, kit: [], log: [] };
-  }
-})();
-
-function save(){ localStorage.setItem(LS_KEY, JSON.stringify(S)); }
-save();
-
-/* ===== Helpers ===== */
-const pad2 = n => String(n).padStart(2,"0");
-function toISODateLocal(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
-
-function fmtTS(iso){
-  const d = new Date(iso);
-  return d.toLocaleString(undefined, {year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"});
+function safeJson(key){
+  try{
+    const raw = localStorage.getItem(key);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch{ return null; }
 }
 
+function uuid(){
+  return Math.random().toString(16).slice(2) + "-" + Date.now().toString(16);
+}
+
+/* Demo seed: 15 materials (you can overwrite via Admin) */
+function demoSeed15(){
+  const today = new Date();
+  const plusDays = d => new Date(today.getTime() + d*86400000);
+  const iso = d => d.toISOString().slice(0,10);
+
+  return [
+    {id:uuid(), product:"Opti-MEM", irn:"1254/25", lot:"3021876", expiry:iso(plusDays(120)), storage:"2–8°C", location:"WH-ROOM1 / Shelf A", min:2, onHand:3, docs:[]},
+    {id:uuid(), product:"CryoStor 100 mL", irn:"1376/26", lot:"25093", expiry:iso(plusDays(420)), storage:"-80°C", location:"WH-DFR-02 / Upper shelf", min:2, onHand:1, docs:[]},
+    {id:uuid(), product:"OKT3", irn:"2001/24", lot:"OKT3-7712", expiry:iso(plusDays(60)), storage:"2–8°C", location:"WH-DFR-01 / Door rack", min:5, onHand:15, docs:[]},
+    {id:uuid(), product:"CD22 (Ab)", irn:"2207/25", lot:"CD22-0007", expiry:iso(plusDays(240)), storage:"-20°C", location:"WH-DFR-02 / Top shelf", min:3, onHand:7, docs:[]},
+    {id:uuid(), product:"CD19 Viral Vector", irn:"1910/25", lot:"VV-0081", expiry:iso(plusDays(310)), storage:"-80°C", location:"WH-DFR-02 / Middle shelf", min:2, onHand:8, docs:[]},
+    {id:uuid(), product:"CD19 1xx", irn:"1911/25", lot:"1XX-0004", expiry:iso(plusDays(180)), storage:"-80°C", location:"WH-DFR-02 / Middle shelf", min:2, onHand:4, docs:[]},
+    {id:uuid(), product:"CD19 Car-T Vect Harvest 5 (25 mL)", irn:"2501006", lot:"H5-0004", expiry:iso(plusDays(90)), storage:"LN2", location:"LN2-01 / Canister 3", min:1, onHand:4, docs:[]},
+    {id:uuid(), product:"CD19 Car-T Vect Harvest 6 (25 mL)", irn:"2506029", lot:"H6-0002", expiry:iso(plusDays(30)), storage:"LN2", location:"LN2-01 / Canister 3", min:1, onHand:2, docs:[]},
+    {id:uuid(), product:"PBS (1X)", irn:"3001/23", lot:"PBS-8810", expiry:iso(plusDays(365)), storage:"RT", location:"WH-ROOM2 / Shelf B", min:1, onHand:6, docs:[]},
+    {id:uuid(), product:"TrypLE", irn:"3002/24", lot:"TRY-1209", expiry:iso(plusDays(200)), storage:"-20°C", location:"WH-DFR-01 / Lower shelf", min:1, onHand:3, docs:[]},
+    {id:uuid(), product:"FBS (Heat-inactivated)", irn:"3003/24", lot:"FBS-7711", expiry:iso(plusDays(80)), storage:"-20°C", location:"WH-DFR-01 / Lower shelf", min:2, onHand:2, docs:[]},
+    {id:uuid(), product:"DMSO (cell culture)", irn:"3004/23", lot:"DMSO-0101", expiry:iso(plusDays(500)), storage:"RT", location:"WH-ROOM2 / Chemicals", min:1, onHand:1, docs:[]},
+    {id:uuid(), product:"IL-2", irn:"4001/24", lot:"IL2-0909", expiry:iso(plusDays(45)), storage:"-80°C", location:"WH-DFR-02 / Bottom shelf", min:1, onHand:5, docs:[]},
+    {id:uuid(), product:"Gentamicin", irn:"4002/23", lot:"GEN-2201", expiry:iso(plusDays(600)), storage:"RT", location:"WH-ROOM2 / Shelf C", min:1, onHand:2, docs:[]},
+    {id:uuid(), product:"HEPES", irn:"4003/23", lot:"HEP-4402", expiry:iso(plusDays(700)), storage:"RT", location:"WH-ROOM2 / Shelf C", min:1, onHand:3, docs:[]},
+  ];
+}
+
+function normalizeItem(it){
+  // map old schemas to current
+  const out = {
+    id: it.id || uuid(),
+    product: it.product || it.name || "Unnamed",
+    irn: it.irn || it.IRN || it.code || "",
+    lot: it.lot || it.LOT || "",
+    expiry: it.expiry || it.exp || it.expDate || "",
+    storage: it.storage || it.storageCondition || "",
+    location: it.location || it.loc || "",
+    min: Number.isFinite(+it.min) ? +it.min : (Number.isFinite(+it.minQty) ? +it.minQty : 0),
+    onHand: Number.isFinite(+it.onHand) ? +it.onHand : (Number.isFinite(+it.qty) ? +it.qty : 0),
+    docs: Array.isArray(it.docs) ? it.docs : (Array.isArray(it.documents) ? it.documents : [])
+  };
+  return out;
+}
+
+function loadState(){
+  const current = safeJson(LS_KEY_V14);
+  if(current && Array.isArray(current.wh)) return current;
+
+  // try legacy import
+  for(const k of LEGACY_KEYS){
+    const legacy = safeJson(k);
+    if(!legacy) continue;
+
+    // legacy could be {wh, kit, log} or other.
+    if(Array.isArray(legacy.wh)){
+      const wh = legacy.wh.map(normalizeItem);
+      const kit = Array.isArray(legacy.kit) ? legacy.kit : [];
+      const log = Array.isArray(legacy.log) ? legacy.log : [];
+      return {wh, kit, log};
+    }
+    // some old builds: {wh:seed, kit:[], log:[]} only; or {items:[]}
+    if(Array.isArray(legacy.items)){
+      const wh = legacy.items.map(normalizeItem);
+      return {wh, kit:[], log:[]};
+    }
+  }
+
+  // default demo
+  return {wh: demoSeed15(), kit: [], log: []};
+}
+
+/* =======================
+   State
+   ======================= */
+let S = loadState();
+function save(){ localStorage.setItem(LS_KEY_V14, JSON.stringify(S)); }
+save();
+
+/* =======================
+   Helpers
+   ======================= */
+const pad2 = n => String(n).padStart(2,"0");
+function toISODateLocal(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function fmtTS(iso){
+  const d = new Date(iso);
+  return d.toLocaleString(undefined,{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+}
 function daysToExpiry(isoDate){
+  if(!isoDate) return 999999;
   const d = new Date(isoDate);
   return Math.floor((d - new Date())/86400000);
 }
-
-function pickedNet(itemId){
-  let p = 0;
-  for(const t of S.kit){
-    if(t.id !== itemId) continue;
-    p += (t.action === "PICK" ? 1 : -1) * Number(t.qty||0);
-  }
-  return p;
-}
-
 function statusOf(it){
-  const av = it.onHand - pickedNet(it.id);
   const du = daysToExpiry(it.expiry);
-
-  if(av < 0) return ["NEGATIVE","bad"];
+  if(it.onHand < 0) return ["NEGATIVE","bad"];
   if(du < 0) return ["EXPIRED","bad"];
   if(du <= 90) return ["EXPIRING","exp"];
-  if(av <= it.min) return ["LOW","low"];
+  if(it.onHand <= (it.min||0)) return ["LOW","low"];
   return ["OK","ok"];
 }
-
 function uniqueKits(){
   const set = new Set();
   for(const t of S.kit) set.add(t.kit);
   return [...set].sort();
 }
+function findItem(id){ return S.wh.find(x=>x.id===id); }
 
-/* ===== Render: Warehouse ===== */
+/* For Return safeguard: net picked for this kit and item */
+function netPickedForKitItem(kitName, itemId){
+  return S.kit
+    .filter(t => t.kit===kitName && t.itemId===itemId)
+    .reduce((acc,t)=> acc + (t.action==="PICK"?1:-1)*Number(t.qty||0), 0);
+}
+
+/* =======================
+   Render: Warehouse
+   ======================= */
 function renderWarehouse(){
   const f = document.querySelector(".filter.active")?.dataset?.filter || "ALL";
-  const sort = document.getElementById("whSort")?.value || "product";
+  const sort = whSort.value;
+  const q = (whSearch.value||"").toLowerCase().trim();
 
   let items = S.wh.map(it=>{
-    const p = pickedNet(it.id);
-    const av = it.onHand - p;
-    const [st, cls] = statusOf(it);
-    return {...it, picked:p, available:av, st, cls};
+    const [st,cls] = statusOf(it);
+    return {...it, st, cls};
   });
+
+  if(q){
+    items = items.filter(it=>{
+      const blob = `${it.irn} ${it.product} ${it.location} ${it.storage} ${it.lot}`.toLowerCase();
+      return blob.includes(q);
+    });
+  }
 
   items = items.filter(it=>{
     if(f==="PROBLEM" && it.st==="OK") return false;
@@ -394,13 +501,16 @@ function renderWarehouse(){
     return true;
   });
 
-  const s = (x)=> (x||"").toString().toLowerCase();
+  const s = x => (x||"").toString().toLowerCase();
+  const pr = st => ({NEGATIVE:1,EXPIRED:2,EXPIRING:3,LOW:4,OK:5}[st]||9);
   items.sort((a,b)=>{
     if(sort==="product") return s(a.product).localeCompare(s(b.product));
+    if(sort==="irn") return s(a.irn).localeCompare(s(b.irn));
     if(sort==="expiry") return new Date(a.expiry) - new Date(b.expiry);
-    if(sort==="available") return a.available - b.available;
+    if(sort==="onhand") return a.onHand - b.onHand;
     if(sort==="location") return s(a.location).localeCompare(s(b.location));
     if(sort==="storage") return s(a.storage).localeCompare(s(b.storage));
+    if(sort==="status") return pr(a.st)-pr(b.st);
     return 0;
   });
 
@@ -408,135 +518,122 @@ function renderWarehouse(){
   for(const it of items){
     whBody.insertAdjacentHTML("beforeend", `
       <tr>
-        <td><a class="link" data-open-card="${it.id}">${it.irn}</a></td>
-        <td><a class="link" data-open-card="${it.id}">${it.product}</a></td>
-        <td>${it.lot}</td>
-        <td>${it.expiry}</td>
-        <td>${it.storage || ""}</td>
-        <td>${it.location || ""}</td>
-        <td class="right">${it.onHand}</td>
-        <td class="right">${it.picked}</td>
-        <td class="right">${it.available}</td>
+        <td><a class="link" data-open="${it.id}">${it.irn}</a></td>
+        <td><a class="link" data-open="${it.id}">${it.product}</a></td>
+        <td>${it.lot||""}</td>
+        <td>${it.expiry||""}</td>
+        <td>${it.storage||""}</td>
+        <td>${it.location||""}</td>
+        <td class="right">${it.min??""}</td>
+        <td class="right">${it.onHand??""}</td>
         <td><span class="pill ${it.cls}">${it.st}</span></td>
       </tr>
     `);
   }
-
-  // bind clicks
-  whBody.querySelectorAll("[data-open-card]").forEach(a=>{
-    a.addEventListener("click", ()=>{
-      openCard(a.getAttribute("data-open-card"));
-    });
+  whBody.querySelectorAll("[data-open]").forEach(a=>{
+    a.addEventListener("click", ()=> openCard(a.getAttribute("data-open")));
   });
 
-  // fill kit dropdown with location visible
-  kitItem.innerHTML = "";
-  for(const it of S.wh){
-    kitItem.insertAdjacentHTML("beforeend",
-      `<option value="${it.id}">${it.irn} — ${it.product} — ${it.location || ""} — Lot ${it.lot}</option>`
-    );
-  }
+  refreshSelectors();
 }
 
-/* ===== Render: Kit Tx ===== */
-function renderKitTx(){
-  const sorted = [...S.kit].sort((a,b)=> new Date(b.ts) - new Date(a.ts));
+/* =======================
+   Render: Kit + Log
+   ======================= */
+function renderKit(){
+  const sorted = [...S.kit].sort((a,b)=> new Date(b.ts)-new Date(a.ts));
   kitTxBody.innerHTML = sorted.map(t=>`
     <tr>
       <td>${fmtTS(t.ts)}</td>
       <td>${t.kit}</td>
       <td>${t.action}</td>
       <td>${t.irn}</td>
-      <td>${t.lot}</td>
+      <td>${t.product}</td>
+      <td>${t.lot||""}</td>
       <td class="right">${t.qty}</td>
       <td>${t.user}</td>
+      <td>${t.comment||""}</td>
     </tr>
   `).join("");
 }
 
-/* ===== Render: Audit Log ===== */
 function renderLog(){
   const q = (logSearch.value||"").toLowerCase().trim();
   const rows = [...S.log]
-    .sort((a,b)=> new Date(b.ts) - new Date(a.ts))
+    .sort((a,b)=> new Date(b.ts)-new Date(a.ts))
     .filter(e=>{
       if(!q) return true;
-      const blob = `${e.ts} ${e.product} ${e.irn} ${e.lot} ${e.qty} ${e.user} ${e.comment}`.toLowerCase();
+      const blob = `${e.ts} ${e.action} ${e.product} ${e.irn} ${e.lot} ${e.qty} ${e.user} ${e.comment}`.toLowerCase();
       return blob.includes(q);
     });
 
   logBody.innerHTML = rows.map(e=>`
     <tr>
       <td>${fmtTS(e.ts)}</td>
+      <td><span class="badge">${e.action}</span></td>
       <td>${e.product}</td>
       <td>${e.irn}</td>
-      <td>${e.lot}</td>
+      <td>${e.lot||""}</td>
       <td class="right">${e.qty}</td>
       <td>${e.user}</td>
-      <td>${e.comment || ""}</td>
+      <td>${e.comment||""}</td>
     </tr>
   `).join("");
 }
 
-/* ===== Inventory Card ===== */
+/* =======================
+   Inventory Card modal
+   ======================= */
 let currentItem = null;
 
-function openCard(id){
-  currentItem = S.wh.find(x=>x.id===id);
+function openCard(itemId){
+  currentItem = findItem(itemId);
   if(!currentItem) return;
 
-  const p = pickedNet(id);
-  const av = currentItem.onHand - p;
-  const [st, cls] = statusOf(currentItem);
+  const [st] = statusOf(currentItem);
 
   cardTitle.textContent = `Inventory Card — ${currentItem.product}`;
-  cardSubtitle.textContent = `IRN ${currentItem.irn} • Lot ${currentItem.lot} • Status ${st}`;
+  cardSubtitle.textContent = `IRN ${currentItem.irn} • Lot ${currentItem.lot||""} • Status ${st}`;
 
   cardKV.innerHTML = `
     <div>Product</div><div>${currentItem.product}</div>
     <div>IRN</div><div>${currentItem.irn}</div>
-    <div>Lot</div><div>${currentItem.lot}</div>
-    <div>Expiry</div><div>${currentItem.expiry}</div>
-    <div>Storage</div><div>${currentItem.storage || ""}</div>
-    <div>Location</div><div>${currentItem.location || ""}</div>
-    <div>Min Qty</div><div>${currentItem.min}</div>
-    <div>On Hand</div><div>${currentItem.onHand}</div>
-    <div>Picked (net)</div><div>${p}</div>
-    <div>Available</div><div>${av}</div>
+    <div>Lot</div><div>${currentItem.lot||""}</div>
+    <div>Expiry</div><div>${currentItem.expiry||""}</div>
+    <div>Storage</div><div>${currentItem.storage||""}</div>
+    <div>Location</div><div>${currentItem.location||""}</div>
+    <div>Min Qty</div><div>${currentItem.min??""}</div>
+    <div>On Hand</div><div>${currentItem.onHand??""}</div>
   `;
 
-  const docsArr = currentItem.docs || [];
+  const docsArr = Array.isArray(currentItem.docs) ? currentItem.docs : [];
   docs.innerHTML = docsArr.length
     ? docsArr.map(d=>`
         <div class="doc">
           📄 <b>${d.type}</b>:
           <a href="${d.data}" target="_blank">${d.name}</a>
-          <span class="sub">(${fmtTS(d.uploadedAt)} by ${d.uploadedBy})</span>
+          <span class="small">(${fmtTS(d.uploadedAt)} by ${d.uploadedBy})</span>
         </div>
       `).join("")
     : `<div class="hint">No documents uploaded.</div>`;
 
-  const txForItem = [...S.kit].filter(t=>t.id===id).sort((a,b)=> new Date(b.ts) - new Date(a.ts));
-  pickedBody.innerHTML = txForItem.map(t=>`
-    <tr>
-      <td>${fmtTS(t.ts)}</td>
-      <td>${t.kit}</td>
-      <td>${t.action}</td>
-      <td class="right">${t.qty}</td>
-      <td>${t.user}</td>
-    </tr>
-  `).join("");
+  // last 25 tx for this item (from kit tx + admin adjustments)
+  const tx = [...S.kit].filter(t=>t.itemId===currentItem.id).sort((a,b)=>new Date(b.ts)-new Date(a.ts)).slice(0,25);
+  const adminTx = [...S.log].filter(e=>e.itemId===currentItem.id && (e.action==="ADJUST_ADD" || e.action==="ADJUST_REMOVE" || e.action==="ADD_ITEM")).slice(0,25);
 
-  const aud = [...S.log].filter(e=> e.irn===currentItem.irn && e.lot===currentItem.lot).sort((a,b)=> new Date(b.ts) - new Date(a.ts));
-  cardAuditBody.innerHTML = aud.map(e=>`
+  const combined = [
+    ...tx.map(t=>({ts:t.ts, action:t.action, kit:t.kit, qty:(t.action==="PICK"?-t.qty:+t.qty), user:t.user, comment:t.comment||""})),
+    ...adminTx.map(e=>({ts:e.ts, action:e.action, kit:"—", qty:e.qty, user:e.user, comment:e.comment||""}))
+  ].sort((a,b)=>new Date(b.ts)-new Date(a.ts)).slice(0,25);
+
+  cardTxBody.innerHTML = combined.map(x=>`
     <tr>
-      <td>${fmtTS(e.ts)}</td>
-      <td>${e.product}</td>
-      <td>${e.irn}</td>
-      <td>${e.lot}</td>
-      <td class="right">${e.qty}</td>
-      <td>${e.user}</td>
-      <td>${e.comment || ""}</td>
+      <td>${fmtTS(x.ts)}</td>
+      <td>${x.action}</td>
+      <td>${x.kit}</td>
+      <td class="right">${x.qty}</td>
+      <td>${x.user}</td>
+      <td>${x.comment}</td>
     </tr>
   `).join("");
 
@@ -548,19 +645,19 @@ function closeCard(){
   currentItem = null;
 }
 
-/* ===== Documents upload ===== */
+/* Upload doc */
 uploadDoc.addEventListener("click", ()=>{
   const f = docFile.files[0];
   if(!f || !currentItem) return;
 
   const r = new FileReader();
   r.onload = ()=>{
-    currentItem.docs = currentItem.docs || [];
+    currentItem.docs = Array.isArray(currentItem.docs) ? currentItem.docs : [];
     currentItem.docs.push({
-      name: f.name,
-      type: docType.value,
-      data: r.result,
-      uploadedBy: (kitUser.value || "User"),
+      name:f.name,
+      type:docType.value,
+      data:r.result,
+      uploadedBy: kitUser.value || "User",
       uploadedAt: new Date().toISOString()
     });
     save();
@@ -570,60 +667,172 @@ uploadDoc.addEventListener("click", ()=>{
   r.readAsDataURL(f);
 });
 
-/* ===== Kit action with safeguards ===== */
+/* =======================
+   Kit actions (REAL stock model)
+   ======================= */
+function kitRefreshOptions(){
+  const q = (kitSearch.value||"").toLowerCase().trim();
+  const items = S.wh.filter(it=>{
+    if(!q) return true;
+    const blob = `${it.irn} ${it.product} ${it.location} ${it.lot}`.toLowerCase();
+    return blob.includes(q);
+  }).slice(0,200);
+
+  kitItem.innerHTML = items.map(it=>
+    `<option value="${it.id}">${it.irn} — ${it.product} — ${it.location||""} — Lot ${it.lot||""} (OnHand: ${it.onHand})</option>`
+  ).join("");
+}
+
+kitSearch.addEventListener("input", kitRefreshOptions);
+
 kitSubmit.addEventListener("click", ()=>{
-  const it = S.wh.find(x=>x.id===kitItem.value);
-  if(!it) return;
+  const itemId = kitItem.value;
+  const it = findItem(itemId);
+  if(!it) return alert("Select a material first.");
 
-  const qty = Math.max(1, Number(kitQty.value || 1));
+  const qty = Math.max(1, Number(kitQty.value||1));
   const action = kitAction.value;
-  const kit = kitName.value.trim() || "KIT";
-  const user = kitUser.value.trim() || "Operator";
+  const kit = (kitName.value||"KIT").trim();
+  const user = (kitUser.value||"Operator").trim();
+  const comment = (kitComment.value||"").trim();
 
-  const av = it.onHand - pickedNet(it.id);
-
-  if(action === "PICK" && qty > av){
-    alert("Cannot pick more than Available.");
+  // ✅ Safeguards with REAL onHand
+  if(action==="PICK" && qty > it.onHand){
+    alert("Cannot pick more than On Hand.");
     return;
   }
 
-  if(action === "RETURN"){
-    const pickedForThisKit = S.kit
-      .filter(t=> t.kit === kit && t.id === it.id)
-      .reduce((acc,t)=> acc + (t.action==="PICK"?1:-1)*Number(t.qty||0), 0);
-
-    if(qty > pickedForThisKit){
+  if(action==="RETURN"){
+    const net = netPickedForKitItem(kit, it.id);
+    if(qty > net){
       alert("Cannot return more than net picked for this kit.");
       return;
     }
   }
 
+  // ✅ Apply stock change
+  if(action==="PICK") it.onHand -= qty;
+  if(action==="RETURN") it.onHand += qty;
+
   const ts = new Date().toISOString();
 
+  // kit history
   S.kit.push({
     ts, kit, action,
-    id: it.id,
+    itemId: it.id,
     irn: it.irn,
+    product: it.product,
     lot: it.lot,
     qty,
-    user
+    user,
+    comment
   });
 
+  // audit log (append only)
   S.log.push({
     ts,
+    action,
+    itemId: it.id,
     product: it.product,
     irn: it.irn,
     lot: it.lot,
     qty: (action==="PICK") ? -qty : +qty,
     user,
-    comment: `${action} — Kit: ${kit}`
+    comment: `Kit: ${kit}${comment?(" | "+comment):""}`
   });
 
   save();
   rerenderAll();
 });
 
-/* ===== Reports ===== */
+/* =======================
+   Admin: Add item + adjust stock
+   ======================= */
+addItem.addEventListener("click", ()=>{
+  const product = (aProduct.value||"").trim();
+  const irn = (aIRN.value||"").trim();
+  const lot = (aLot.value||"").trim();
+  const expiry = aExpiry.value || "";
+  const storage = (aStorage.value||"").trim();
+  const location = (aLocation.value||"").trim();
+  const min = Number(aMin.value||0);
+  const onHand = Number(aOnHand.value||0);
+
+  if(!product || !irn) return alert("Product and IRN are required.");
+
+  const id = uuid();
+  const item = {id, product, irn, lot, expiry, storage, location, min, onHand, docs:[]};
+  S.wh.push(item);
+
+  S.log.push({
+    ts:new Date().toISOString(),
+    action:"ADD_ITEM",
+    itemId:id,
+    product, irn, lot,
+    qty:onHand,
+    user: adjUser.value || "Admin",
+    comment:`Added new material. Min=${min}. Storage=${storage}. Location=${location}.`
+  });
+
+  // clear fields
+  aProduct.value=""; aIRN.value=""; aLot.value="";
+  aExpiry.value=""; aStorage.value=""; aLocation.value="";
+  aMin.value="1"; aOnHand.value="0";
+
+  save();
+  rerenderAll();
+});
+
+doAdjust.addEventListener("click", ()=>{
+  const itemId = adjItem.value;
+  const it = findItem(itemId);
+  if(!it) return alert("Select item.");
+  const type = adjType.value;
+  const qty = Math.max(1, Number(adjQty.value||1));
+  const user = (adjUser.value||"Admin").trim();
+  const comment = (adjComment.value||"").trim();
+
+  if(type==="REMOVE" && !comment) return alert("Reason is mandatory for removing stock.");
+  if(type==="REMOVE" && qty > it.onHand) return alert("Cannot remove more than On Hand.");
+
+  if(type==="ADD") it.onHand += qty;
+  if(type==="REMOVE") it.onHand -= qty;
+
+  S.log.push({
+    ts:new Date().toISOString(),
+    action: type==="ADD" ? "ADJUST_ADD" : "ADJUST_REMOVE",
+    itemId: it.id,
+    product: it.product,
+    irn: it.irn,
+    lot: it.lot,
+    qty: type==="ADD" ? +qty : -qty,
+    user,
+    comment: comment || (type==="ADD" ? "Stock added" : "Stock removed")
+  });
+
+  adjComment.value="";
+  save();
+  rerenderAll();
+});
+
+/* =======================
+   Reports printing (working)
+   ======================= */
+function openReport(title, subtitle, html){
+  reportTitle.textContent = title;
+  reportSubtitle.textContent = subtitle || "";
+  reportContent.innerHTML = html;
+  reportBg.style.display = "flex";
+}
+
+function closeReport(){
+  reportBg.style.display = "none";
+  reportContent.innerHTML = "";
+}
+
+reportPrintBtn.addEventListener("click", ()=> window.print());
+reportCloseBtn.addEventListener("click", closeReport);
+
 function auditRangeFromPreset(){
   const preset = auditPreset.value;
   const now = new Date();
@@ -640,30 +849,46 @@ function auditRangeFromPreset(){
     start.setHours(0,0,0,0);
     return {from:start, to:end, label:`Last ${back} days`};
   }
-
-  // custom
   const f = auditFrom.value ? new Date(auditFrom.value+"T00:00:00") : new Date(end.getTime()-6*86400000);
   const t = auditTo.value ? new Date(auditTo.value+"T23:59:59.999") : end;
   return {from:f, to:t, label:`Custom: ${auditFrom.value||"(auto)"} → ${auditTo.value||"(today)"}`};
 }
 
-function generateAuditReportHTML(range){
-  const rows = [...S.log].filter(e=>{
-    const ts = new Date(e.ts);
-    return ts >= range.from && ts <= range.to;
-  }).sort((a,b)=> new Date(a.ts) - new Date(b.ts));
-
+function reportHeaderKV(extraRowsHtml=""){
   return `
     <div class="kv" style="margin-top:10px">
       <div><b>Generated</b></div><div>${new Date().toLocaleString()}</div>
+      ${extraRowsHtml}
+    </div>
+  `;
+}
+
+function signatureBlock(){
+  return `
+    <div style="margin-top:14px" class="kv">
+      <div><b>Prepared by</b></div><div>__________________</div>
+      <div><b>Checked by</b></div><div>__________________</div>
+      <div><b>Date</b></div><div>__________________</div>
+      <div><b>Signature</b></div><div>__________________</div>
+    </div>
+  `;
+}
+
+function auditReportHTML(range){
+  const rows = [...S.log].filter(e=>{
+    const ts = new Date(e.ts);
+    return ts>=range.from && ts<=range.to;
+  }).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+
+  return `
+    ${reportHeaderKV(`
       <div><b>Range</b></div><div>${range.from.toLocaleString()} — ${range.to.toLocaleString()}</div>
       <div><b>Records</b></div><div>${rows.length}</div>
-    </div>
-
+    `)}
     <table class="table" style="margin-top:12px">
       <thead>
         <tr>
-          <th>Date &amp; Time</th><th>Product</th><th>IRN</th><th>Lot</th>
+          <th>Date &amp; Time</th><th>Action</th><th>Product</th><th>IRN</th><th>Lot</th>
           <th class="right">Qty</th><th>User</th><th>Comment</th>
         </tr>
       </thead>
@@ -671,55 +896,47 @@ function generateAuditReportHTML(range){
         ${rows.map(e=>`
           <tr>
             <td>${fmtTS(e.ts)}</td>
+            <td>${e.action}</td>
             <td>${e.product}</td>
             <td>${e.irn}</td>
-            <td>${e.lot}</td>
+            <td>${e.lot||""}</td>
             <td class="right">${e.qty}</td>
             <td>${e.user}</td>
-            <td>${e.comment || ""}</td>
+            <td>${e.comment||""}</td>
           </tr>
         `).join("")}
       </tbody>
     </table>
-
-    <div style="margin-top:14px" class="kv">
-      <div><b>Prepared by</b></div><div>__________________</div>
-      <div><b>Checked by</b></div><div>__________________</div>
-      <div><b>Date</b></div><div>__________________</div>
-      <div><b>Signature</b></div><div>__________________</div>
-    </div>
+    ${signatureBlock()}
   `;
 }
 
-function generateKitRecordHTML(kitNameValue){
-  const tx = [...S.kit].filter(t=>t.kit===kitNameValue).sort((a,b)=> new Date(a.ts) - new Date(b.ts));
-
-  const summary = {};
+function kitRecordHTML(kitName){
+  const tx = [...S.kit].filter(t=>t.kit===kitName).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+  const sum = {};
   for(const t of tx){
-    const key = `${t.irn}||${t.lot}`;
-    summary[key] = summary[key] || {irn:t.irn, lot:t.lot, net:0};
-    summary[key].net += (t.action==="PICK"?1:-1)*t.qty;
+    const key = `${t.irn}||${t.lot||""}`;
+    sum[key] = sum[key] || {irn:t.irn, product:t.product, lot:t.lot||"", net:0};
+    sum[key].net += (t.action==="PICK"?1:-1)*t.qty;
   }
-  const sumArr = Object.values(summary);
+  const sumArr = Object.values(sum);
 
   return `
-    <div class="kv" style="margin-top:10px">
-      <div><b>Kit</b></div><div>${kitNameValue}</div>
-      <div><b>Generated</b></div><div>${new Date().toLocaleString()}</div>
+    ${reportHeaderKV(`
+      <div><b>Kit</b></div><div>${kitName}</div>
       <div><b>Transactions</b></div><div>${tx.length}</div>
-    </div>
-
+    `)}
     <div class="sectionTitle" style="margin-top:12px">Kit Summary (net)</div>
     <table class="table">
-      <thead><tr><th>IRN</th><th>Lot</th><th class="right">Net</th></tr></thead>
+      <thead><tr><th>IRN</th><th>Product</th><th>Lot</th><th class="right">Net</th></tr></thead>
       <tbody>
-        ${sumArr.map(s=>`<tr><td>${s.irn}</td><td>${s.lot}</td><td class="right">${s.net}</td></tr>`).join("")}
+        ${sumArr.map(s=>`<tr><td>${s.irn}</td><td>${s.product}</td><td>${s.lot}</td><td class="right">${s.net}</td></tr>`).join("")}
       </tbody>
     </table>
 
     <div class="sectionTitle" style="margin-top:12px">Kit Transactions</div>
     <table class="table">
-      <thead><tr><th>Date &amp; Time</th><th>User</th><th>Action</th><th>IRN</th><th>Lot</th><th class="right">Qty</th></tr></thead>
+      <thead><tr><th>Date &amp; Time</th><th>User</th><th>Action</th><th>IRN</th><th>Product</th><th>Lot</th><th class="right">Qty</th><th>Comment</th></tr></thead>
       <tbody>
         ${tx.map(t=>`
           <tr>
@@ -727,64 +944,49 @@ function generateKitRecordHTML(kitNameValue){
             <td>${t.user}</td>
             <td>${t.action}</td>
             <td>${t.irn}</td>
-            <td>${t.lot}</td>
+            <td>${t.product}</td>
+            <td>${t.lot||""}</td>
             <td class="right">${t.qty}</td>
+            <td>${t.comment||""}</td>
           </tr>
         `).join("")}
       </tbody>
     </table>
-
-    <div style="margin-top:14px" class="kv">
-      <div><b>Prepared by</b></div><div>__________________</div>
-      <div><b>Checked by</b></div><div>__________________</div>
-      <div><b>Date</b></div><div>__________________</div>
-      <div><b>Signature</b></div><div>__________________</div>
-    </div>
+    ${signatureBlock()}
   `;
 }
 
-function generateStockCheckHTML(mode){
+function stockCheckHTML(mode){
   const rows = S.wh.map(it=>{
-    const p = pickedNet(it.id);
-    const av = it.onHand - p;
-    const du = daysToExpiry(it.expiry);
-    const [st, cls] = statusOf(it);
-    return {...it, picked:p, available:av, daysToExpiry:du, st, cls};
+    const [st,cls] = statusOf(it);
+    return {...it, st, cls, dte:daysToExpiry(it.expiry)};
   });
 
   let filtered = rows;
-  if(mode==="expiring") filtered = rows.filter(r => r.st==="EXPIRING" || r.st==="EXPIRED");
-  if(mode==="low") filtered = rows.filter(r => r.st==="LOW");
-  if(mode==="negative") filtered = rows.filter(r => r.st==="NEGATIVE");
-  if(mode==="problems") filtered = rows.filter(r => r.st!=="OK");
+  if(mode==="expiring") filtered = rows.filter(r=> r.st==="EXPIRING" || r.st==="EXPIRED");
+  if(mode==="low") filtered = rows.filter(r=> r.st==="LOW");
+  if(mode==="negative") filtered = rows.filter(r=> r.st==="NEGATIVE");
+  if(mode==="problems") filtered = rows.filter(r=> r.st!=="OK");
 
-  // sort
-  const pr = (s)=> ({NEGATIVE:1,EXPIRED:2,EXPIRING:3,LOW:4,OK:5}[s]||9);
+  const pr = st => ({NEGATIVE:1,EXPIRED:2,EXPIRING:3,LOW:4,OK:5}[st]||9);
   filtered.sort((a,b)=>{
-    if(mode==="problems") return pr(a.st)-pr(b.st) || a.daysToExpiry-b.daysToExpiry;
-    if(mode==="expiring") return a.daysToExpiry-b.daysToExpiry;
-    if(mode==="low") return a.available-b.available;
-    if(mode==="negative") return a.available-b.available;
+    if(mode==="problems") return pr(a.st)-pr(b.st) || a.dte-b.dte;
+    if(mode==="expiring") return a.dte-b.dte;
+    if(mode==="low") return a.onHand-b.onHand;
+    if(mode==="negative") return a.onHand-b.onHand;
     return pr(a.st)-pr(b.st);
   });
 
   return `
-    <div class="kv" style="margin-top:10px">
-      <div><b>Generated</b></div><div>${new Date().toLocaleString()}</div>
+    ${reportHeaderKV(`
       <div><b>Mode</b></div><div>${mode}</div>
       <div><b>Items</b></div><div>${filtered.length}</div>
-    </div>
-
+    `)}
     <table class="table" style="margin-top:12px">
       <thead>
         <tr>
-          <th>IRN</th><th>Product</th><th>Lot</th><th>Expiry</th>
-          <th>Storage</th><th>Location</th>
-          <th class="right">Min</th>
-          <th class="right">On Hand</th>
-          <th class="right">Picked</th>
-          <th class="right">Available</th>
-          <th>Status</th>
+          <th>IRN</th><th>Product</th><th>Lot</th><th>Expiry</th><th>Storage</th><th>Location</th>
+          <th class="right">Min</th><th class="right">On Hand</th><th>Status</th>
         </tr>
       </thead>
       <tbody>
@@ -792,110 +994,154 @@ function generateStockCheckHTML(mode){
           <tr>
             <td>${r.irn}</td>
             <td>${r.product}</td>
-            <td>${r.lot}</td>
-            <td>${r.expiry}</td>
-            <td>${r.storage || ""}</td>
-            <td>${r.location || ""}</td>
-            <td class="right">${r.min}</td>
-            <td class="right">${r.onHand}</td>
-            <td class="right">${r.picked}</td>
-            <td class="right">${r.available}</td>
+            <td>${r.lot||""}</td>
+            <td>${r.expiry||""}</td>
+            <td>${r.storage||""}</td>
+            <td>${r.location||""}</td>
+            <td class="right">${r.min??""}</td>
+            <td class="right">${r.onHand??""}</td>
             <td><span class="pill ${r.cls}">${r.st}</span></td>
           </tr>
         `).join("")}
       </tbody>
     </table>
-
-    <div style="margin-top:14px" class="kv">
-      <div><b>Prepared by</b></div><div>__________________</div>
-      <div><b>Checked by</b></div><div>__________________</div>
-      <div><b>Date</b></div><div>__________________</div>
-      <div><b>Signature</b></div><div>__________________</div>
-    </div>
+    ${signatureBlock()}
   `;
 }
 
-function openReport(title, subtitle, html){
-  reportTitle.textContent = title;
-  reportSubtitle.textContent = subtitle || "";
-  reportContent.innerHTML = html;
-  reportBg.style.display = "flex";
+function itemCardHTML(itemId){
+  const it = findItem(itemId);
+  if(!it) return `<div>Item not found</div>`;
+  const [st,cls] = statusOf(it);
+
+  const docsArr = Array.isArray(it.docs) ? it.docs : [];
+  const tx = [...S.kit].filter(t=>t.itemId===it.id).sort((a,b)=>new Date(b.ts)-new Date(a.ts)).slice(0,25);
+
+  return `
+    ${reportHeaderKV(`
+      <div><b>Product</b></div><div>${it.product}</div>
+      <div><b>IRN</b></div><div>${it.irn}</div>
+      <div><b>Lot</b></div><div>${it.lot||""}</div>
+      <div><b>Expiry</b></div><div>${it.expiry||""}</div>
+      <div><b>Storage</b></div><div>${it.storage||""}</div>
+      <div><b>Location</b></div><div>${it.location||""}</div>
+      <div><b>Min Qty</b></div><div>${it.min??""}</div>
+      <div><b>On Hand</b></div><div>${it.onHand??""}</div>
+      <div><b>Status</b></div><div><span class="pill ${cls}">${st}</span></div>
+    `)}
+
+    <div class="sectionTitle" style="margin-top:12px">Documents</div>
+    ${docsArr.length ? `
+      <table class="table">
+        <thead><tr><th>Type</th><th>File</th><th>Uploaded</th><th>By</th></tr></thead>
+        <tbody>
+          ${docsArr.map(d=>`
+            <tr>
+              <td>${d.type}</td>
+              <td>${d.name}</td>
+              <td>${fmtTS(d.uploadedAt)}</td>
+              <td>${d.uploadedBy}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    ` : `<div class="hint">No documents.</div>`}
+
+    <div class="sectionTitle" style="margin-top:12px">Recent transactions (last 25)</div>
+    <table class="table">
+      <thead><tr><th>Date &amp; Time</th><th>Kit</th><th>Action</th><th class="right">Qty</th><th>User</th><th>Comment</th></tr></thead>
+      <tbody>
+        ${tx.map(t=>`
+          <tr>
+            <td>${fmtTS(t.ts)}</td>
+            <td>${t.kit}</td>
+            <td>${t.action}</td>
+            <td class="right">${t.action==="PICK" ? -t.qty : +t.qty}</td>
+            <td>${t.user}</td>
+            <td>${t.comment||""}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+
+    ${signatureBlock()}
+  `;
 }
 
-function closeReport(){
-  reportBg.style.display = "none";
-  reportContent.innerHTML = "";
-}
+printAuditReport.addEventListener("click", ()=>{
+  const range = auditRangeFromPreset();
+  openReport("Audit Log Report", range.label, auditReportHTML(range));
+});
 
-function refreshKitSelector(){
+printKitReport.addEventListener("click", ()=>{
+  const k = kitSelect.value;
+  if(!k){ alert("No kit selected."); return; }
+  openReport("Kit Record", k, kitRecordHTML(k));
+});
+
+printStockReport.addEventListener("click", ()=>{
+  openReport("Stock Check", stockMode.options[stockMode.selectedIndex].textContent, stockCheckHTML(stockMode.value));
+});
+
+printItemCard.addEventListener("click", ()=>{
+  const id = itemSelect.value;
+  if(!id){ alert("Select an item."); return; }
+  const it = findItem(id);
+  openReport("Inventory Card", `${it.product} — ${it.irn}`, itemCardHTML(id));
+});
+
+/* Card print button just routes you to Reports -> Inventory Card */
+cardPrintBtn.addEventListener("click", ()=>{
+  if(!currentItem) return;
+  // open directly
+  openReport("Inventory Card", `${currentItem.product} — ${currentItem.irn}`, itemCardHTML(currentItem.id));
+});
+
+/* =======================
+   Selectors refresh
+   ======================= */
+function refreshSelectors(){
+  // Admin adjust item select
+  const opts = S.wh
+    .slice()
+    .sort((a,b)=> (a.product||"").localeCompare(b.product||""))
+    .map(it=>`<option value="${it.id}">${it.irn} — ${it.product} — ${it.location||""} (OnHand: ${it.onHand})</option>`)
+    .join("");
+
+  adjItem.innerHTML = opts;
+  itemSelect.innerHTML = `<option value="">(select)</option>` + opts;
+
+  // Reports kit selector
   const kits = uniqueKits();
   kitSelect.innerHTML = kits.length
     ? kits.map(k=>`<option value="${k}">${k}</option>`).join("")
     : `<option value="">(no kits yet)</option>`;
+
+  // Kit dropdown with search
+  kitRefreshOptions();
 }
 
-/* Report buttons */
-runAuditReport.addEventListener("click", ()=>{
-  const range = auditRangeFromPreset();
-  auditReportPreview.innerHTML = generateAuditReportHTML(range);
-});
-printAuditReport.addEventListener("click", ()=>{
-  const range = auditRangeFromPreset();
-  openReport("Audit Log Report", range.label, generateAuditReportHTML(range));
-});
-runKitReport.addEventListener("click", ()=>{
-  const k = kitSelect.value;
-  kitReportPreview.innerHTML = k ? generateKitRecordHTML(k) : `<div class="hint">No kit selected.</div>`;
-});
-printKitReport.addEventListener("click", ()=>{
-  const k = kitSelect.value;
-  if(!k){ alert("Select a kit first."); return; }
-  openReport("Kit Record", k, generateKitRecordHTML(k));
-});
-runStockReport.addEventListener("click", ()=>{
-  stockReportPreview.innerHTML = generateStockCheckHTML(stockMode.value);
-});
-printStockReport.addEventListener("click", ()=>{
-  openReport("Weekly Stock Check", stockMode.options[stockMode.selectedIndex].textContent, generateStockCheckHTML(stockMode.value));
-});
+/* =======================
+   Global rerender
+   ======================= */
+function rerenderAll(){
+  renderWarehouse();
+  renderKit();
+  renderLog();
+  refreshSelectors();
+}
 
-/* Report preset date enabling */
-auditPreset.addEventListener("change", ()=>{
-  const isCustom = auditPreset.value === "custom";
-  auditFrom.disabled = !isCustom;
-  auditTo.disabled = !isCustom;
-});
-
-/* ===== Utilities ===== */
-exportJson.addEventListener("click", ()=>{
-  const blob = new Blob([JSON.stringify(S,null,2)], {type:"application/json"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "gmp_export.json";
-  a.click();
-  URL.revokeObjectURL(a.href);
-});
-
-clearLog.addEventListener("click", ()=>{
-  if(!confirm("Clear audit log?")) return;
-  S.log = [];
-  save();
-  rerenderAll();
-});
-
-logSearch.addEventListener("input", renderLog);
-
-/* ===== UI bindings ===== */
+/* =======================
+   UI bindings
+   ======================= */
 document.querySelectorAll(".tabbtn").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     document.querySelectorAll(".tabbtn").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
-    ["warehouse","kit","log","reports"].forEach(id=>document.getElementById(id).classList.add("hide"));
+    ["warehouse","kit","log","reports","admin"].forEach(id=>document.getElementById(id).classList.add("hide"));
     document.getElementById(btn.dataset.tab).classList.remove("hide");
 
-    if(btn.dataset.tab === "reports"){
-      refreshKitSelector();
-    }
+    if(btn.dataset.tab==="reports") refreshSelectors();
   });
 });
 
@@ -907,15 +1153,17 @@ document.querySelectorAll(".filter").forEach(f=>{
   });
 });
 
-document.getElementById("whSort").addEventListener("change", renderWarehouse);
+whSort.addEventListener("change", renderWarehouse);
+whSearch.addEventListener("input", renderWarehouse);
 
-document.getElementById("closeCardBtn").addEventListener("click", closeCard);
-document.getElementById("printCardBtn").addEventListener("click", ()=>window.print());
+logSearch.addEventListener("input", renderLog);
 
-document.getElementById("reportCloseBtn").addEventListener("click", closeReport);
-document.getElementById("reportPrintBtn").addEventListener("click", ()=>window.print());
+auditPreset.addEventListener("change", ()=>{
+  const isCustom = auditPreset.value === "custom";
+  auditFrom.disabled = !isCustom;
+  auditTo.disabled = !isCustom;
+});
 
-/* ===== Initial dates ===== */
 (function initReportDates(){
   const today = new Date();
   auditFrom.value = toISODateLocal(new Date(today.getTime()-6*86400000));
@@ -923,19 +1171,27 @@ document.getElementById("reportPrintBtn").addEventListener("click", ()=>window.p
   auditPreset.dispatchEvent(new Event("change"));
 })();
 
-/* ===== Main rerender ===== */
-function rerenderAll(){
-  renderWarehouse();
-  renderKitTx();
-  renderLog();
-  refreshKitSelector();
+exportJson.addEventListener("click", ()=>{
+  const blob = new Blob([JSON.stringify(S,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "gmp_export.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
 
-  auditReportPreview.innerHTML = "";
-  kitReportPreview.innerHTML = "";
-  stockReportPreview.innerHTML = "";
-}
+clearAll.addEventListener("click", ()=>{
+  if(!confirm("This will reset V1.4 data (demo). Continue?")) return;
+  S = {wh: demoSeed15(), kit: [], log: []};
+  save();
+  rerenderAll();
+});
 
-/* ===== Init ===== */
+cardCloseBtn.addEventListener("click", closeCard);
+
+/* =======================
+   Boot
+   ======================= */
 rerenderAll();
 </script>
 </body>
