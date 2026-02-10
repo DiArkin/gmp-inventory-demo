@@ -11,7 +11,7 @@
     header h1 { margin:0; font-size:18px; font-weight:700; letter-spacing:.2px; }
     header .sub { opacity:.8; font-size:12px; margin-top:4px; }
 
-    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px 16px 26px; }
+    .wrap { max-width: 1250px; margin: 0 auto; padding: 16px 16px 26px; }
     .tabs { display:flex; gap:8px; margin: 12px 0 14px; flex-wrap: wrap; }
     .tabbtn {
       border:1px solid #2a3c70; background:#0f1a33; color:#e8eefc;
@@ -43,9 +43,46 @@
     .right { text-align:right; }
     .small { font-size:11px; opacity:.8; }
     .split { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
-    .hide { display:none; }
     .topbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+    a.link { color:#9bb6ff; text-decoration: underline; cursor:pointer; }
+    a.link:hover { opacity:.9; }
+
+    /* Modal */
+    .modalBackdrop {
+      position:fixed; inset:0; background:rgba(0,0,0,.6);
+      display:none; align-items:center; justify-content:center; padding:16px; z-index:50;
+    }
+    .modal {
+      width:min(980px, 96vw);
+      max-height: 88vh;
+      overflow:auto;
+      background:#0f1a33;
+      border:1px solid #22335f;
+      border-radius:18px;
+      padding:14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+    }
+    .modalHeader { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .modalTitle { font-size:14px; font-weight:800; }
+    .modalActions { display:flex; gap:8px; flex-wrap:wrap; }
+    .kv { display:grid; grid-template-columns: 140px 1fr; gap:6px 10px; margin-top:10px; }
+    .kv div { font-size:12.5px; }
+    .kv .k { opacity:.75; }
+    .seg { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+    .seg button { padding:8px 10px; border-radius:999px; font-size:12px; }
+    .seg button.active { background:#1a2d5a; border-color:#3f5fb0; }
+
+    /* PRINT: print only modal content */
+    @media print {
+      body { background:#fff; color:#000; }
+      header, .tabs, #warehouse, #kit, #log, #admin { display:none !important; }
+      .modalBackdrop { display:block !important; position:static !important; background:transparent !important; padding:0 !important; }
+      .modal { border:none !important; box-shadow:none !important; max-height:none !important; overflow:visible !important; background:#fff !important; color:#000 !important; }
+      .modalActions, .seg, .noPrint { display:none !important; }
+      .table th, .table td { border-bottom: 1px solid #ccc !important; color:#000 !important; }
+      a.link { color:#000 !important; text-decoration:none !important; }
+    }
   </style>
 </head>
 <body>
@@ -75,20 +112,27 @@
           <button class="ghost" id="resetAll">Reset to seed data</button>
         </div>
         <div class="hint">
-          Status is based on expiry (≤120 days = warning) and negative stock = critical.
+          Click <b>Product</b> or <b>IRN</b> to open the inventory card. Click <b>Picked</b> to see who picked, kit number and timestamp. Print to PDF from the card.
         </div>
       </div>
 
       <table class="table" id="whTable">
         <thead>
           <tr>
-            <th>Item_ID</th><th>Product</th><th>Manufacturer</th><th>IRN</th><th>Lot</th><th>Expiry</th>
-            <th class="right">On Hand</th><th class="right">Picked</th><th class="right">Available</th><th>Status</th>
+            <th>IRN</th>
+            <th>Product</th>
+            <th>Manufacturer</th>
+            <th>Lot</th>
+            <th>Expiry</th>
+            <th class="right">On Hand</th>
+            <th class="right">Picked</th>
+            <th class="right">Available</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
-      <div class="small muted">Tip for presentation: go to Kit → pick items → return to Warehouse and show “Available” changing live.</div>
+      <div class="small muted">Tip: go to Kit → Pick/Return → back to Warehouse → “Available” changes live.</div>
     </section>
 
     <!-- Kit -->
@@ -96,20 +140,28 @@
       <div class="split">
         <div class="topbar">
           <input id="kitName" value="WH Demo Kit A" style="min-width:220px;">
+          <select id="kitAction">
+            <option value="PICK">Pick</option>
+            <option value="RETURN">Return</option>
+          </select>
+
+          <!-- Search + dropdown -->
+          <input id="kitSearch" placeholder="Type IRN / product to search…" style="min-width:260px;">
           <select id="kitItem"></select>
+
           <input id="kitQty" type="number" min="1" step="1" value="1" style="width:110px;">
           <input id="kitUser" value="DemoUser" style="min-width:140px;">
-          <button class="primary" id="pickBtn">Pick for kit</button>
+          <button class="primary" id="kitSubmitBtn">Submit</button>
         </div>
         <div class="hint">
-          Picking creates an audit record with timestamp and deducts from warehouse (by Item_ID).
+          Pick/Return writes to Audit Log with kit name, user and timestamp. Return increases available stock.
         </div>
       </div>
 
       <table class="table" id="kitTable">
         <thead>
           <tr>
-            <th>Kit</th><th>Timestamp</th><th>User</th><th>Item_ID</th><th>Product</th><th>Lot</th><th class="right">Picked_Qty</th><th></th>
+            <th>Kit</th><th>Timestamp</th><th>User</th><th>Action</th><th>Product</th><th>IRN</th><th>Lot</th><th class="right">Qty</th><th></th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -125,14 +177,20 @@
           <button class="danger" id="clearLog">Clear log</button>
         </div>
         <div class="hint">
-          This is your audit trail for demo purposes. (For strict GMP immutability you’d use a backend + roles.)
+          Order: datetime → product → IRN → lot → qty → user → comment (kit).
         </div>
       </div>
 
       <table class="table" id="logTable">
         <thead>
           <tr>
-            <th>Timestamp</th><th>Action</th><th>User</th><th>Item_ID</th><th>Product</th><th>Lot</th><th class="right">Qty_Change</th><th>Comment</th>
+            <th>Date &amp; Time</th>
+            <th>Product</th>
+            <th>IRN</th>
+            <th>Lot</th>
+            <th class="right">Quantity</th>
+            <th>User</th>
+            <th>Comment (Kit)</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -150,7 +208,7 @@
             <button class="ghost" id="copySeed">Copy seed CSV</button>
           </div>
           <div class="hint" style="margin-top:8px;">
-            Expiry formats supported: <span class="mono">MM.YYYY</span> or <span class="mono">DD.MM.YYYY</span>.
+            Expiry formats supported: <span style="font-family: ui-monospace;">MM.YYYY</span> or <span style="font-family: ui-monospace;">DD.MM.YYYY</span>.
           </div>
         </div>
         <div>
@@ -172,8 +230,60 @@
     </section>
   </div>
 
+  <!-- Inventory Card Modal -->
+  <div class="modalBackdrop" id="modalBackdrop">
+    <div class="modal" id="modal">
+      <div class="modalHeader">
+        <div>
+          <div class="modalTitle" id="cardTitle">Inventory Card</div>
+          <div class="small muted" id="cardSubtitle"></div>
+        </div>
+        <div class="modalActions">
+          <button class="ghost" id="printCardBtn">Print / Save as PDF</button>
+          <button class="danger" id="closeCardBtn">Close</button>
+        </div>
+      </div>
+
+      <div class="kv" id="cardKV"></div>
+
+      <div class="seg noPrint">
+        <button class="segbtn active" data-view="summary">Summary</button>
+        <button class="segbtn" data-view="picked">Picked history</button>
+        <button class="segbtn" data-view="audit">Audit log</button>
+      </div>
+
+      <div id="cardView_summary">
+        <p class="hint">Summary shows current stock state and computed picked/available.</p>
+      </div>
+
+      <div id="cardView_picked" class="hide">
+        <p class="hint">Picked history: who, when, kit name and quantity.</p>
+        <table class="table" id="pickedTable">
+          <thead>
+            <tr>
+              <th>Date &amp; Time</th><th>Kit</th><th>User</th><th>Action</th><th class="right">Qty</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="cardView_audit" class="hide">
+        <p class="hint">Audit records filtered to this product/IRN/lot.</p>
+        <table class="table" id="cardAuditTable">
+          <thead>
+            <tr>
+              <th>Date &amp; Time</th><th>Product</th><th>IRN</th><th>Lot</th><th class="right">Quantity</th><th>User</th><th>Comment</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 <script>
-  // ---------- Seed data (from your screenshot) ----------
+  // ---------- Seed data ----------
   const SEED_WAREHOUSE = [
     {id:"WH-0001", product:"Human Albumin", manufacturer:"Kedrion", irn:"1354/25", lot:"252946", expiry:"08.2028", onHand:20},
     {id:"WH-0002", product:"Human Albumin", manufacturer:"Kedrion", irn:"1290/25", lot:"232944", expiry:"09.2026", onHand:4},
@@ -197,7 +307,6 @@
 
     {id:"WH-0016", product:"T Cell TransAct", manufacturer:"Miltenyi Biotec", irn:"1193/25", lot:"253663", expiry:"04.2026", onHand:2},
 
-    // CRISPER row (as seen: IRN looks like long number, Exp shown as date, Lot shown as 1329/25)
     {id:"WH-0017", product:"GMP T Cell TransAct", manufacturer:"Miltenyi Biotec", irn:"6241000078", lot:"1329/25", expiry:"25.09.2026", onHand:5},
 
     {id:"WH-0018", product:"DMEM", manufacturer:"Gibco", irn:"1257/25", lot:"3174722", expiry:"03.2026", onHand:19},
@@ -209,7 +318,7 @@
   ];
 
   // ---------- Storage ----------
-  const LS_KEYS = { wh:"gmp_wh_v1", kit:"gmp_kit_v1", log:"gmp_log_v1" };
+  const LS_KEYS = { wh:"gmp_wh_v2", kit:"gmp_kit_v2", log:"gmp_log_v2" };
 
   function loadOrSeed(key, seed) {
     const raw = localStorage.getItem(key);
@@ -219,20 +328,20 @@
   function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
 
   let warehouse = loadOrSeed(LS_KEYS.wh, SEED_WAREHOUSE);
-  let kitPicks = loadOrSeed(LS_KEYS.kit, []);
+  // kitTx: {txId, kit, ts, user, action:PICK|RETURN, itemId, qty, product, irn, lot}
+  let kitTx = loadOrSeed(LS_KEYS.kit, []);
+  // audit: {ts, product, irn, lot, qty, user, comment}
   let auditLog = loadOrSeed(LS_KEYS.log, [
-    {ts:new Date().toISOString(), action:"INIT LOAD", user:"System", itemId:"—", product:"Loaded screenshot items", lot:"—", qty:0, comment:"Demo initialization"}
+    {ts:new Date().toISOString(), product:"Loaded screenshot items", irn:"—", lot:"—", qty:0, user:"System", comment:"Demo initialization"}
   ]);
 
   // ---------- Helpers ----------
   function parseExpiry(s) {
     s = (s||"").trim();
-    // MM.YYYY
     if (/^\d{2}\.\d{4}$/.test(s)) {
       const [mm, yyyy] = s.split(".");
       return new Date(Number(yyyy), Number(mm)-1, 1);
     }
-    // DD.MM.YYYY
     if (/^\d{2}\.\d{2}\.\d{4}$/.test(s)) {
       const [dd, mm, yyyy] = s.split(".");
       return new Date(Number(yyyy), Number(mm)-1, Number(dd));
@@ -251,9 +360,19 @@
     return d.toLocaleString(undefined, {year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"});
   }
 
-  function calcPickedByItem() {
+  function addAudit(entry) {
+    auditLog.push(entry);
+    save(LS_KEYS.log, auditLog);
+  }
+
+  // Picked map: PICK decreases available, RETURN increases available => netPicked = PICK - RETURN
+  function calcNetPickedByItem() {
     const map = {};
-    for (const k of kitPicks) map[k.itemId] = (map[k.itemId] || 0) + Number(k.qty||0);
+    for (const t of kitTx) {
+      const q = Number(t.qty||0);
+      const sign = (t.action === "PICK") ? 1 : -1;
+      map[t.itemId] = (map[t.itemId] || 0) + sign*q;
+    }
     return map;
   }
 
@@ -265,29 +384,40 @@
     return {text:"OK", cls:"ok"};
   }
 
-  // ---------- Render ----------
+  function normalize(s){ return (s||"").toString().toLowerCase().trim(); }
+
+  // ---------- DOM refs ----------
   const whBody = document.querySelector("#whTable tbody");
   const kitBody = document.querySelector("#kitTable tbody");
   const logBody = document.querySelector("#logTable tbody");
 
-  function renderWarehouse() {
-    const pickedMap = calcPickedByItem();
+  // Modal refs
+  const modalBackdrop = document.getElementById("modalBackdrop");
+  const cardTitle = document.getElementById("cardTitle");
+  const cardSubtitle = document.getElementById("cardSubtitle");
+  const cardKV = document.getElementById("cardKV");
+  const pickedTableBody = document.querySelector("#pickedTable tbody");
+  const cardAuditBody = document.querySelector("#cardAuditTable tbody");
 
-    // Build list with computed columns
+  let currentCardItemId = null;
+  let currentCardFocus = "summary"; // summary|picked|audit
+
+  // ---------- Render Warehouse ----------
+  function renderWarehouse() {
+    const netPickedMap = calcNetPickedByItem();
+
     const list = warehouse.map(it => {
-      const picked = pickedMap[it.id] || 0;
+      const picked = netPickedMap[it.id] || 0; // net picked
       const available = Number(it.onHand) - Number(picked);
       return { ...it, picked, available };
     });
 
-    // Search
-    const q = (document.getElementById("whSearch").value || "").toLowerCase().trim();
+    const q = normalize(document.getElementById("whSearch").value);
     let filtered = q ? list.filter(it => {
-      const blob = `${it.id} ${it.product} ${it.manufacturer} ${it.irn} ${it.lot} ${it.expiry}`.toLowerCase();
+      const blob = `${it.product} ${it.manufacturer} ${it.irn} ${it.lot} ${it.expiry}`.toLowerCase();
       return blob.includes(q);
     }) : list;
 
-    // Sort
     const sort = document.getElementById("whSort").value;
     filtered.sort((a,b)=>{
       if (sort==="product") return a.product.localeCompare(b.product);
@@ -301,50 +431,61 @@
       const st = statusFor(it, it.available);
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td class="mono">${it.id}</td>
-        <td>${it.product}</td>
+        <td><a class="link" data-open-card="${it.id}" data-focus="summary">${it.irn}</a></td>
+        <td><a class="link" data-open-card="${it.id}" data-focus="summary">${it.product}</a></td>
         <td>${it.manufacturer}</td>
-        <td class="mono">${it.irn}</td>
-        <td class="mono">${it.lot}</td>
-        <td class="mono">${it.expiry}</td>
-        <td class="right mono">${it.onHand}</td>
-        <td class="right mono">${it.picked}</td>
-        <td class="right mono">${it.available}</td>
+        <td>${it.lot}</td>
+        <td>${it.expiry}</td>
+        <td class="right">${it.onHand}</td>
+        <td class="right"><a class="link" data-open-card="${it.id}" data-focus="picked">${it.picked}</a></td>
+        <td class="right">${it.available}</td>
         <td><span class="pill ${st.cls}">${st.text}</span></td>
       `;
       whBody.appendChild(tr);
     }
 
+    // wire card links
+    whBody.querySelectorAll("[data-open-card]").forEach(a=>{
+      a.addEventListener("click", ()=>{
+        openCard(a.getAttribute("data-open-card"), a.getAttribute("data-focus") || "summary");
+      });
+    });
+
     // Update selectors
-    const itemSelect = document.getElementById("kitItem");
+    const kitItem = document.getElementById("kitItem");
     const adjItem = document.getElementById("adjItem");
-    itemSelect.innerHTML = "";
+    kitItem.innerHTML = "";
     adjItem.innerHTML = "";
     for (const it of warehouse) {
       const opt = document.createElement("option");
       opt.value = it.id;
-      opt.textContent = `${it.id} — ${it.product} — Lot ${it.lot} (IRN ${it.irn})`;
-      itemSelect.appendChild(opt);
+      opt.textContent = `${it.irn} — ${it.product} — Lot ${it.lot}`;
+      kitItem.appendChild(opt);
 
       const opt2 = opt.cloneNode(true);
       adjItem.appendChild(opt2);
     }
+
+    // keep kitItem aligned with kitSearch if possible
+    syncKitDropdownWithSearch();
   }
 
+  // ---------- Render Kit ----------
   function renderKit() {
     kitBody.innerHTML = "";
-    const sorted = [...kitPicks].sort((a,b)=> new Date(b.ts) - new Date(a.ts));
-    for (const k of sorted) {
+    const sorted = [...kitTx].sort((a,b)=> new Date(b.ts) - new Date(a.ts));
+    for (const t of sorted) {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${k.kit}</td>
-        <td class="mono">${fmtTS(k.ts)}</td>
-        <td>${k.user}</td>
-        <td class="mono">${k.itemId}</td>
-        <td>${k.product}</td>
-        <td class="mono">${k.lot}</td>
-        <td class="right mono">${k.qty}</td>
-        <td class="right"><button class="danger" data-del="${k.pickId}">Undo</button></td>
+        <td>${t.kit}</td>
+        <td>${fmtTS(t.ts)}</td>
+        <td>${t.user}</td>
+        <td>${t.action}</td>
+        <td><a class="link" data-open-card="${t.itemId}" data-focus="summary">${t.product}</a></td>
+        <td><a class="link" data-open-card="${t.itemId}" data-focus="summary">${t.irn}</a></td>
+        <td>${t.lot}</td>
+        <td class="right">${t.qty}</td>
+        <td class="right"><button class="danger" data-del="${t.txId}">Undo</button></td>
       `;
       kitBody.appendChild(tr);
     }
@@ -352,15 +493,19 @@
     kitBody.querySelectorAll("button[data-del]").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         const id = btn.getAttribute("data-del");
-        undoPick(id);
+        undoTx(id);
       });
+    });
+    kitBody.querySelectorAll("[data-open-card]").forEach(a=>{
+      a.addEventListener("click", ()=> openCard(a.getAttribute("data-open-card"), a.getAttribute("data-focus") || "summary"));
     });
   }
 
+  // ---------- Render Log (NEW ORDER & FIELDS) ----------
   function renderLog() {
-    const q = (document.getElementById("logSearch").value || "").toLowerCase().trim();
+    const q = normalize(document.getElementById("logSearch").value);
     const filtered = q ? auditLog.filter(e => {
-      const blob = `${e.ts} ${e.action} ${e.user} ${e.itemId} ${e.product} ${e.lot} ${e.qty} ${e.comment}`.toLowerCase();
+      const blob = `${e.ts} ${e.product} ${e.irn} ${e.lot} ${e.qty} ${e.user} ${e.comment}`.toLowerCase();
       return blob.includes(q);
     }) : auditLog;
 
@@ -369,13 +514,12 @@
     for (const e of sorted) {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td class="mono">${fmtTS(e.ts)}</td>
-        <td>${e.action}</td>
-        <td>${e.user}</td>
-        <td class="mono">${e.itemId}</td>
+        <td>${fmtTS(e.ts)}</td>
         <td>${e.product}</td>
-        <td class="mono">${e.lot}</td>
-        <td class="right mono">${e.qty}</td>
+        <td>${e.irn}</td>
+        <td>${e.lot}</td>
+        <td class="right">${e.qty}</td>
+        <td>${e.user}</td>
         <td class="muted">${e.comment || ""}</td>
       `;
       logBody.appendChild(tr);
@@ -384,51 +528,180 @@
 
   function rerenderAll(){ renderWarehouse(); renderKit(); renderLog(); }
 
-  // ---------- Actions ----------
-  function addLog(entry) {
-    auditLog.push(entry);
-    save(LS_KEYS.log, auditLog);
+  // ---------- Inventory Card (click-through + Print/PDF) ----------
+  function openCard(itemId, focus="summary") {
+    currentCardItemId = itemId;
+    currentCardFocus = focus;
+
+    const item = warehouse.find(x=>x.id===itemId);
+    if (!item) return;
+
+    // compute picked/available
+    const netPickedMap = calcNetPickedByItem();
+    const picked = netPickedMap[item.id] || 0;
+    const available = Number(item.onHand) - Number(picked);
+
+    cardTitle.textContent = `Inventory Card — ${item.product}`;
+    cardSubtitle.textContent = `IRN ${item.irn} • Lot ${item.lot}`;
+
+    cardKV.innerHTML = `
+      <div class="k">Product</div><div>${item.product}</div>
+      <div class="k">Manufacturer</div><div>${item.manufacturer}</div>
+      <div class="k">IRN</div><div>${item.irn}</div>
+      <div class="k">Lot</div><div>${item.lot}</div>
+      <div class="k">Expiry</div><div>${item.expiry}</div>
+      <div class="k">Qty On Hand</div><div>${item.onHand}</div>
+      <div class="k">Picked (net)</div><div>${picked}</div>
+      <div class="k">Qty Available</div><div>${available}</div>
+    `;
+
+    // Fill picked history (kit transactions for this item)
+    pickedTableBody.innerHTML = "";
+    const txForItem = kitTx
+      .filter(t=>t.itemId===itemId)
+      .sort((a,b)=> new Date(b.ts) - new Date(a.ts));
+    for (const t of txForItem) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${fmtTS(t.ts)}</td>
+        <td>${t.kit}</td>
+        <td>${t.user}</td>
+        <td>${t.action}</td>
+        <td class="right">${t.qty}</td>
+      `;
+      pickedTableBody.appendChild(tr);
+    }
+
+    // Fill audit filtered to this card
+    cardAuditBody.innerHTML = "";
+    const aud = auditLog
+      .filter(e => e.product===item.product && e.irn===item.irn && e.lot===item.lot)
+      .sort((a,b)=> new Date(b.ts) - new Date(a.ts));
+    for (const e of aud) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${fmtTS(e.ts)}</td>
+        <td>${e.product}</td>
+        <td>${e.irn}</td>
+        <td>${e.lot}</td>
+        <td class="right">${e.qty}</td>
+        <td>${e.user}</td>
+        <td class="muted">${e.comment || ""}</td>
+      `;
+      cardAuditBody.appendChild(tr);
+    }
+
+    // set focus view
+    setCardView(focus);
+
+    // show modal
+    modalBackdrop.style.display = "flex";
   }
 
-  function pickForKit() {
+  function closeCard() {
+    modalBackdrop.style.display = "none";
+    currentCardItemId = null;
+  }
+
+  function setCardView(view) {
+    currentCardFocus = view;
+    document.querySelectorAll(".segbtn").forEach(b=> b.classList.toggle("active", b.getAttribute("data-view")===view));
+    document.getElementById("cardView_summary").classList.toggle("hide", view!=="summary");
+    document.getElementById("cardView_picked").classList.toggle("hide", view!=="picked");
+    document.getElementById("cardView_audit").classList.toggle("hide", view!=="audit");
+  }
+
+  // ---------- Kit search (manual input + suggestions) ----------
+  function syncKitDropdownWithSearch() {
+    const q = normalize(document.getElementById("kitSearch").value);
+    const kitItem = document.getElementById("kitItem");
+
+    if (!q) return;
+
+    // find best match among options
+    const options = [...kitItem.options];
+    const found = options.find(o => normalize(o.textContent).includes(q));
+    if (found) kitItem.value = found.value;
+  }
+
+  function filterKitDropdown() {
+    const q = normalize(document.getElementById("kitSearch").value);
+    const kitItem = document.getElementById("kitItem");
+
+    const current = kitItem.value;
+    kitItem.innerHTML = "";
+
+    const filtered = q
+      ? warehouse.filter(it => normalize(`${it.irn} ${it.product} ${it.lot}`).includes(q))
+      : warehouse;
+
+    for (const it of filtered) {
+      const opt = document.createElement("option");
+      opt.value = it.id;
+      opt.textContent = `${it.irn} — ${it.product} — Lot ${it.lot}`;
+      kitItem.appendChild(opt);
+    }
+
+    // keep selection if possible
+    if ([...kitItem.options].some(o=>o.value===current)) kitItem.value = current;
+  }
+
+  // ---------- Actions ----------
+  function submitKitTx() {
     const kit = document.getElementById("kitName").value.trim() || "Unnamed kit";
+    const action = document.getElementById("kitAction").value; // PICK | RETURN
     const itemId = document.getElementById("kitItem").value;
     const qty = Math.max(1, Number(document.getElementById("kitQty").value || 1));
     const user = document.getElementById("kitUser").value.trim() || "User";
     const item = warehouse.find(x=>x.id===itemId);
     if (!item) return;
 
-    const pickId = crypto.randomUUID();
     const ts = new Date().toISOString();
+    const txId = crypto.randomUUID();
 
-    kitPicks.push({
-      pickId, kit, ts, user,
+    kitTx.push({
+      txId, kit, ts, user, action,
       itemId, qty,
       product:item.product,
+      irn:item.irn,
       lot:item.lot
     });
-    save(LS_KEYS.kit, kitPicks);
+    save(LS_KEYS.kit, kitTx);
 
-    addLog({
-      ts, action:"PICKED", user,
-      itemId, product:item.product, lot:item.lot,
-      qty:-qty, comment:`Picked for kit: ${kit}`
+    // qty sign in audit: PICK => negative, RETURN => positive
+    const auditQty = (action === "PICK") ? -qty : +qty;
+
+    addAudit({
+      ts,
+      product: item.product,
+      irn: item.irn,
+      lot: item.lot,
+      qty: auditQty,
+      user,
+      comment: `${action} — Kit: ${kit}`
     });
 
     rerenderAll();
   }
 
-  function undoPick(pickId) {
-    const idx = kitPicks.findIndex(x=>x.pickId===pickId);
+  function undoTx(txId) {
+    const idx = kitTx.findIndex(x=>x.txId===txId);
     if (idx < 0) return;
-    const p = kitPicks[idx];
-    kitPicks.splice(idx,1);
-    save(LS_KEYS.kit, kitPicks);
+    const t = kitTx[idx];
+    kitTx.splice(idx,1);
+    save(LS_KEYS.kit, kitTx);
 
-    addLog({
-      ts:new Date().toISOString(), action:"UNDO PICK", user:p.user,
-      itemId:p.itemId, product:p.product, lot:p.lot,
-      qty:+Number(p.qty), comment:`Undo pick for kit: ${p.kit}`
+    // Undo should reverse the last effect
+    const undoQty = (t.action === "PICK") ? +Number(t.qty) : -Number(t.qty);
+
+    addAudit({
+      ts:new Date().toISOString(),
+      product: t.product,
+      irn: t.irn,
+      lot: t.lot,
+      qty: undoQty,
+      user: t.user,
+      comment: `UNDO ${t.action} — Kit: ${t.kit}`
     });
 
     rerenderAll();
@@ -437,10 +710,10 @@
   function resetAll() {
     if (!confirm("Reset warehouse, kit and log back to seed data?")) return;
     warehouse = structuredClone(SEED_WAREHOUSE);
-    kitPicks = [];
-    auditLog = [{ts:new Date().toISOString(), action:"INIT LOAD", user:"System", itemId:"—", product:"Loaded screenshot items", lot:"—", qty:0, comment:"Demo initialization"}];
+    kitTx = [];
+    auditLog = [{ts:new Date().toISOString(), product:"Loaded screenshot items", irn:"—", lot:"—", qty:0, user:"System", comment:"Demo initialization"}];
     save(LS_KEYS.wh, warehouse);
-    save(LS_KEYS.kit, kitPicks);
+    save(LS_KEYS.kit, kitTx);
     save(LS_KEYS.log, auditLog);
     rerenderAll();
   }
@@ -470,7 +743,17 @@
     }
     warehouse = out;
     save(LS_KEYS.wh, warehouse);
-    addLog({ts:new Date().toISOString(), action:"IMPORT", user:"System", itemId:"—", product:"Warehouse import", lot:"—", qty:0, comment:`Imported ${out.length} items from CSV`});
+
+    addAudit({
+      ts:new Date().toISOString(),
+      product:"Warehouse import",
+      irn:"—",
+      lot:"—",
+      qty:0,
+      user:"System",
+      comment:`Imported ${out.length} items from CSV`
+    });
+
     rerenderAll();
     alert("Imported.");
   }
@@ -496,11 +779,13 @@
     item.onHand = Number(item.onHand) + delta;
     save(LS_KEYS.wh, warehouse);
 
-    addLog({
+    addAudit({
       ts:new Date().toISOString(),
-      action: type==="add" ? "ADJUST +IN" : "ADJUST -OUT",
-      user, itemId:item.id, product:item.product, lot:item.lot,
+      product:item.product,
+      irn:item.irn,
+      lot:item.lot,
       qty: delta,
+      user,
       comment: comment || (type==="add" ? "Incoming stock" : "Manual subtraction")
     });
 
@@ -508,7 +793,7 @@
   }
 
   function exportJSON() {
-    const blob = new Blob([JSON.stringify({warehouse, kitPicks, auditLog}, null, 2)], {type:"application/json"});
+    const blob = new Blob([JSON.stringify({warehouse, kitTx, auditLog}, null, 2)], {type:"application/json"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "gmp_inventory_export.json";
@@ -528,8 +813,27 @@
     });
   });
 
+  // ---------- Modal events ----------
+  document.getElementById("closeCardBtn").addEventListener("click", closeCard);
+  modalBackdrop.addEventListener("click", (e)=>{ if (e.target === modalBackdrop) closeCard(); });
+  document.getElementById("printCardBtn").addEventListener("click", ()=> window.print());
+  document.querySelectorAll(".segbtn").forEach(b=>{
+    b.addEventListener("click", ()=> setCardView(b.getAttribute("data-view")));
+  });
+
   // ---------- Wire up ----------
-  document.getElementById("pickBtn").addEventListener("click", pickForKit);
+  document.getElementById("kitSubmitBtn").addEventListener("click", submitKitTx);
+
+  document.getElementById("kitSearch").addEventListener("input", ()=>{
+    filterKitDropdown();
+    syncKitDropdownWithSearch();
+  });
+  document.getElementById("kitItem").addEventListener("change", ()=>{
+    // update kitSearch to reflect choice
+    const item = warehouse.find(x=>x.id===document.getElementById("kitItem").value);
+    if (item) document.getElementById("kitSearch").value = `${item.irn} ${item.product}`;
+  });
+
   document.getElementById("whSearch").addEventListener("input", renderWarehouse);
   document.getElementById("whSort").addEventListener("change", renderWarehouse);
   document.getElementById("logSearch").addEventListener("input", renderLog);
@@ -552,8 +856,11 @@
 
   // Initial render
   rerenderAll();
-  // Pre-fill CSV area with seed for convenience
   document.getElementById("csvImport").value = seedCSV();
+
+  // Pre-fill kitSearch with first option
+  const first = warehouse[0];
+  if (first) document.getElementById("kitSearch").value = `${first.irn} ${first.product}`;
 </script>
 </body>
 </html>
