@@ -20,7 +20,7 @@
     .tabbtn.active { background:#1a2d5a; border-color:#3f5fb0; }
     .card { background:#0f1a33; border:1px solid #22335f; border-radius:18px; padding:14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
     .row { display:flex; gap:12px; flex-wrap: wrap; }
-    .row > * { flex:1; min-width: 240px; }
+    .row > * { flex:1; min-width: 260px; }
     label { display:block; font-size:12px; opacity:.85; margin-bottom:6px; }
     input, select, button, textarea {
       font: inherit; border-radius:12px; border:1px solid #2a3c70; background:#0b1220;
@@ -47,6 +47,9 @@
 
     a.link { color:#9bb6ff; text-decoration: underline; cursor:pointer; }
     a.link:hover { opacity:.9; }
+
+    /* Critical: tabs visibility */
+    .hide { display:none; }
 
     /* Modal */
     .modalBackdrop {
@@ -88,7 +91,7 @@
 <body>
   <header>
     <h1>GMP Inventory Simulator</h1>
-    <div class="sub">Web app demo — Warehouse ⇄ Kit deduction + Audit Log (EN). Data stored locally in your browser.</div>
+    <div class="sub">Web app demo — Warehouse ⇄ Kit Pick/Return + Audit Log. Data stored locally in your browser.</div>
   </header>
 
   <div class="wrap">
@@ -99,7 +102,7 @@
       <button class="tabbtn" data-tab="admin">Admin</button>
     </div>
 
-    <!-- Warehouse -->
+    <!-- Warehouse: ONLY list -->
     <section id="warehouse" class="card">
       <div class="split">
         <div class="topbar">
@@ -112,7 +115,7 @@
           <button class="ghost" id="resetAll">Reset to seed data</button>
         </div>
         <div class="hint">
-          Click <b>Product</b> or <b>IRN</b> to open the inventory card. Click <b>Picked</b> to see who picked, kit number and timestamp. Print to PDF from the card.
+          Warehouse is list-only. Click <b>Product</b> or <b>IRN</b> to open the Inventory Card (with logs). Click <b>Picked</b> to open Picked history.
         </div>
       </div>
 
@@ -132,10 +135,11 @@
         </thead>
         <tbody></tbody>
       </table>
-      <div class="small muted">Tip: go to Kit → Pick/Return → back to Warehouse → “Available” changes live.</div>
+
+      <div class="small muted">Tip: Pick/Return in Kit → return to Warehouse → “Available” updates live.</div>
     </section>
 
-    <!-- Kit -->
+    <!-- Kit: ONLY pick/return -->
     <section id="kit" class="card hide">
       <div class="split">
         <div class="topbar">
@@ -145,7 +149,6 @@
             <option value="RETURN">Return</option>
           </select>
 
-          <!-- Search + dropdown -->
           <input id="kitSearch" placeholder="Type IRN / product to search…" style="min-width:260px;">
           <select id="kitItem"></select>
 
@@ -154,21 +157,21 @@
           <button class="primary" id="kitSubmitBtn">Submit</button>
         </div>
         <div class="hint">
-          Pick/Return writes to Audit Log with kit name, user and timestamp. Return increases available stock.
+          Kit is action-only: Pick or Return. Each action writes an audit event with kit name, user and timestamp.
         </div>
       </div>
 
       <table class="table" id="kitTable">
         <thead>
           <tr>
-            <th>Kit</th><th>Timestamp</th><th>User</th><th>Action</th><th>Product</th><th>IRN</th><th>Lot</th><th class="right">Qty</th><th></th>
+            <th>Kit</th><th>Date &amp; Time</th><th>User</th><th>Action</th><th>Product</th><th>IRN</th><th>Lot</th><th class="right">Qty</th><th></th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
     </section>
 
-    <!-- Log -->
+    <!-- Audit Log: ONLY list -->
     <section id="log" class="card hide">
       <div class="split">
         <div class="topbar">
@@ -177,7 +180,7 @@
           <button class="danger" id="clearLog">Clear log</button>
         </div>
         <div class="hint">
-          Order: datetime → product → IRN → lot → qty → user → comment (kit).
+          Audit Log is list-only. Order: datetime → product → IRN → lot → quantity → user → comment (kit). Click Product/IRN to open Inventory Card.
         </div>
       </div>
 
@@ -197,33 +200,47 @@
       </table>
     </section>
 
-    <!-- Admin -->
+    <!-- Admin: ONLY add stock + add NEW material -->
     <section id="admin" class="card hide">
       <div class="row">
         <div>
-          <label>Import warehouse items (CSV). Columns: Item_ID,Product,Manufacturer,IRN,Lot,Expiry,Qty_On_Hand</label>
-          <textarea id="csvImport" rows="10" style="width:100%;" spellcheck="false"></textarea>
+          <label>Add stock to EXISTING material (incoming)</label>
+          <select id="adjItem"></select>
+          <input id="adjQty" type="number" min="1" step="1" value="1" />
+          <input id="adjUser" value="DemoUser" />
+          <input id="adjComment" placeholder="Comment (optional)" />
+          <input type="hidden" id="adjType" value="add" />
+          <button class="primary" id="adjBtn" style="margin-top:10px;">Add stock</button>
+          <div class="hint" style="margin-top:10px;">
+            This increases Qty On Hand and writes an Audit Log entry.
+          </div>
+
+          <hr style="border:0;border-top:1px solid #22335f; margin:14px 0;">
+          <label>Import warehouse items (CSV) — optional for bulk load</label>
+          <textarea id="csvImport" rows="8" style="width:100%;" spellcheck="false"></textarea>
           <div class="topbar" style="margin-top:10px;">
             <button class="primary" id="importBtn">Import CSV to Warehouse</button>
             <button class="ghost" id="copySeed">Copy seed CSV</button>
           </div>
           <div class="hint" style="margin-top:8px;">
-            Expiry formats supported: <span style="font-family: ui-monospace;">MM.YYYY</span> or <span style="font-family: ui-monospace;">DD.MM.YYYY</span>.
+            CSV columns: Item_ID,Product,Manufacturer,IRN,Lot,Expiry,Qty_On_Hand. Expiry supports MM.YYYY or DD.MM.YYYY.
           </div>
         </div>
+
         <div>
-          <label>Quick add / adjust stock</label>
-          <select id="adjItem"></select>
-          <input id="adjQty" type="number" step="1" value="1" />
-          <select id="adjType">
-            <option value="add">Add (incoming)</option>
-            <option value="subtract">Subtract (picked/used)</option>
-          </select>
-          <input id="adjUser" value="DemoUser" />
-          <input id="adjComment" placeholder="Comment (optional)" />
-          <button class="primary" id="adjBtn" style="margin-top:10px;">Apply adjustment</button>
+          <label>Add NEW material (creates a new warehouse line)</label>
+          <input id="newProduct" placeholder="Product" />
+          <input id="newManufacturer" placeholder="Manufacturer" />
+          <input id="newIRN" placeholder="IRN" />
+          <input id="newLot" placeholder="Lot" />
+          <input id="newExpiry" placeholder="Expiry (MM.YYYY or DD.MM.YYYY)" />
+          <input id="newQty" type="number" value="1" min="0" step="1" />
+          <input id="newUser" value="DemoUser" />
+          <input id="newComment" placeholder="Comment (optional)" />
+          <button class="primary" id="addNewBtn" style="margin-top:10px;">Add new material</button>
+
           <div class="hint" style="margin-top:10px;">
-            This writes to Audit Log and changes Qty_On_Hand.
+            Required minimum: Product + IRN + Lot. This will also create an audit entry.
           </div>
         </div>
       </div>
@@ -269,7 +286,7 @@
       </div>
 
       <div id="cardView_audit" class="hide">
-        <p class="hint">Audit records filtered to this product/IRN/lot.</p>
+        <p class="hint">Audit records filtered to this IRN + Lot.</p>
         <table class="table" id="cardAuditTable">
           <thead>
             <tr>
@@ -318,7 +335,7 @@
   ];
 
   // ---------- Storage ----------
-  const LS_KEYS = { wh:"gmp_wh_v2", kit:"gmp_kit_v2", log:"gmp_log_v2" };
+  const LS_KEYS = { wh:"gmp_wh_v3", kit:"gmp_kit_v3", log:"gmp_log_v3" };
 
   function loadOrSeed(key, seed) {
     const raw = localStorage.getItem(key);
@@ -359,13 +376,14 @@
     const d = new Date(iso);
     return d.toLocaleString(undefined, {year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"});
   }
+  function normalize(s){ return (s||"").toString().toLowerCase().trim(); }
 
   function addAudit(entry) {
     auditLog.push(entry);
     save(LS_KEYS.log, auditLog);
   }
 
-  // Picked map: PICK decreases available, RETURN increases available => netPicked = PICK - RETURN
+  // PICK decreases available, RETURN increases available => netPicked = PICK - RETURN
   function calcNetPickedByItem() {
     const map = {};
     for (const t of kitTx) {
@@ -384,8 +402,6 @@
     return {text:"OK", cls:"ok"};
   }
 
-  function normalize(s){ return (s||"").toString().toLowerCase().trim(); }
-
   // ---------- DOM refs ----------
   const whBody = document.querySelector("#whTable tbody");
   const kitBody = document.querySelector("#kitTable tbody");
@@ -400,14 +416,90 @@
   const cardAuditBody = document.querySelector("#cardAuditTable tbody");
 
   let currentCardItemId = null;
-  let currentCardFocus = "summary"; // summary|picked|audit
 
-  // ---------- Render Warehouse ----------
+  // ---------- Inventory Card ----------
+  function setCardView(view) {
+    document.querySelectorAll(".segbtn").forEach(b=> b.classList.toggle("active", b.getAttribute("data-view")===view));
+    document.getElementById("cardView_summary").classList.toggle("hide", view!=="summary");
+    document.getElementById("cardView_picked").classList.toggle("hide", view!=="picked");
+    document.getElementById("cardView_audit").classList.toggle("hide", view!=="audit");
+  }
+
+  function openCard(itemId, focus="summary") {
+    currentCardItemId = itemId;
+
+    const item = warehouse.find(x=>x.id===itemId);
+    if (!item) return;
+
+    const netPickedMap = calcNetPickedByItem();
+    const picked = netPickedMap[item.id] || 0;
+    const available = Number(item.onHand) - Number(picked);
+
+    cardTitle.textContent = `Inventory Card — ${item.product}`;
+    cardSubtitle.textContent = `IRN ${item.irn} • Lot ${item.lot}`;
+
+    cardKV.innerHTML = `
+      <div class="k">Product</div><div>${item.product}</div>
+      <div class="k">Manufacturer</div><div>${item.manufacturer}</div>
+      <div class="k">IRN</div><div>${item.irn}</div>
+      <div class="k">Lot</div><div>${item.lot}</div>
+      <div class="k">Expiry</div><div>${item.expiry}</div>
+      <div class="k">Qty On Hand</div><div>${item.onHand}</div>
+      <div class="k">Picked (net)</div><div>${picked}</div>
+      <div class="k">Qty Available</div><div>${available}</div>
+    `;
+
+    // Picked history: kitTx for this item
+    pickedTableBody.innerHTML = "";
+    const txForItem = kitTx
+      .filter(t=>t.itemId===itemId)
+      .sort((a,b)=> new Date(b.ts) - new Date(a.ts));
+    for (const t of txForItem) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${fmtTS(t.ts)}</td>
+        <td>${t.kit}</td>
+        <td>${t.user}</td>
+        <td>${t.action}</td>
+        <td class="right">${t.qty}</td>
+      `;
+      pickedTableBody.appendChild(tr);
+    }
+
+    // Audit for this IRN+Lot (strong filter)
+    cardAuditBody.innerHTML = "";
+    const aud = auditLog
+      .filter(e => e.irn===item.irn && e.lot===item.lot)
+      .sort((a,b)=> new Date(b.ts) - new Date(a.ts));
+    for (const e of aud) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${fmtTS(e.ts)}</td>
+        <td>${e.product}</td>
+        <td>${e.irn}</td>
+        <td>${e.lot}</td>
+        <td class="right">${e.qty}</td>
+        <td>${e.user}</td>
+        <td class="muted">${e.comment || ""}</td>
+      `;
+      cardAuditBody.appendChild(tr);
+    }
+
+    setCardView(focus);
+    modalBackdrop.style.display = "flex";
+  }
+
+  function closeCard() {
+    modalBackdrop.style.display = "none";
+    currentCardItemId = null;
+  }
+
+  // ---------- Render Warehouse (list-only) ----------
   function renderWarehouse() {
     const netPickedMap = calcNetPickedByItem();
 
     const list = warehouse.map(it => {
-      const picked = netPickedMap[it.id] || 0; // net picked
+      const picked = netPickedMap[it.id] || 0;
       const available = Number(it.onHand) - Number(picked);
       return { ...it, picked, available };
     });
@@ -444,14 +536,13 @@
       whBody.appendChild(tr);
     }
 
-    // wire card links
     whBody.querySelectorAll("[data-open-card]").forEach(a=>{
       a.addEventListener("click", ()=>{
         openCard(a.getAttribute("data-open-card"), a.getAttribute("data-focus") || "summary");
       });
     });
 
-    // Update selectors
+    // Update selectors for Kit/Admin
     const kitItem = document.getElementById("kitItem");
     const adjItem = document.getElementById("adjItem");
     kitItem.innerHTML = "";
@@ -466,11 +557,10 @@
       adjItem.appendChild(opt2);
     }
 
-    // keep kitItem aligned with kitSearch if possible
     syncKitDropdownWithSearch();
   }
 
-  // ---------- Render Kit ----------
+  // ---------- Render Kit (action-only UI, but shows history table) ----------
   function renderKit() {
     kitBody.innerHTML = "";
     const sorted = [...kitTx].sort((a,b)=> new Date(b.ts) - new Date(a.ts));
@@ -501,7 +591,7 @@
     });
   }
 
-  // ---------- Render Log (NEW ORDER & FIELDS) ----------
+  // ---------- Render Audit Log (list-only + clickable) ----------
   function renderLog() {
     const q = normalize(document.getElementById("logSearch").value);
     const filtered = q ? auditLog.filter(e => {
@@ -515,8 +605,8 @@
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${fmtTS(e.ts)}</td>
-        <td>${e.product}</td>
-        <td>${e.irn}</td>
+        <td><a class="link" data-open-by="${e.irn}|${e.lot}" data-focus="audit">${e.product}</a></td>
+        <td><a class="link" data-open-by="${e.irn}|${e.lot}" data-focus="audit">${e.irn}</a></td>
         <td>${e.lot}</td>
         <td class="right">${e.qty}</td>
         <td>${e.user}</td>
@@ -524,101 +614,24 @@
       `;
       logBody.appendChild(tr);
     }
+
+    logBody.querySelectorAll("[data-open-by]").forEach(a=>{
+      a.addEventListener("click", ()=>{
+        const [irn, lot] = a.getAttribute("data-open-by").split("|");
+        const item = warehouse.find(x => x.irn === irn && x.lot === lot) || warehouse.find(x => x.irn === irn);
+        if (item) openCard(item.id, a.getAttribute("data-focus") || "audit");
+      });
+    });
   }
 
   function rerenderAll(){ renderWarehouse(); renderKit(); renderLog(); }
-
-  // ---------- Inventory Card (click-through + Print/PDF) ----------
-  function openCard(itemId, focus="summary") {
-    currentCardItemId = itemId;
-    currentCardFocus = focus;
-
-    const item = warehouse.find(x=>x.id===itemId);
-    if (!item) return;
-
-    // compute picked/available
-    const netPickedMap = calcNetPickedByItem();
-    const picked = netPickedMap[item.id] || 0;
-    const available = Number(item.onHand) - Number(picked);
-
-    cardTitle.textContent = `Inventory Card — ${item.product}`;
-    cardSubtitle.textContent = `IRN ${item.irn} • Lot ${item.lot}`;
-
-    cardKV.innerHTML = `
-      <div class="k">Product</div><div>${item.product}</div>
-      <div class="k">Manufacturer</div><div>${item.manufacturer}</div>
-      <div class="k">IRN</div><div>${item.irn}</div>
-      <div class="k">Lot</div><div>${item.lot}</div>
-      <div class="k">Expiry</div><div>${item.expiry}</div>
-      <div class="k">Qty On Hand</div><div>${item.onHand}</div>
-      <div class="k">Picked (net)</div><div>${picked}</div>
-      <div class="k">Qty Available</div><div>${available}</div>
-    `;
-
-    // Fill picked history (kit transactions for this item)
-    pickedTableBody.innerHTML = "";
-    const txForItem = kitTx
-      .filter(t=>t.itemId===itemId)
-      .sort((a,b)=> new Date(b.ts) - new Date(a.ts));
-    for (const t of txForItem) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${fmtTS(t.ts)}</td>
-        <td>${t.kit}</td>
-        <td>${t.user}</td>
-        <td>${t.action}</td>
-        <td class="right">${t.qty}</td>
-      `;
-      pickedTableBody.appendChild(tr);
-    }
-
-    // Fill audit filtered to this card
-    cardAuditBody.innerHTML = "";
-    const aud = auditLog
-      .filter(e => e.product===item.product && e.irn===item.irn && e.lot===item.lot)
-      .sort((a,b)=> new Date(b.ts) - new Date(a.ts));
-    for (const e of aud) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${fmtTS(e.ts)}</td>
-        <td>${e.product}</td>
-        <td>${e.irn}</td>
-        <td>${e.lot}</td>
-        <td class="right">${e.qty}</td>
-        <td>${e.user}</td>
-        <td class="muted">${e.comment || ""}</td>
-      `;
-      cardAuditBody.appendChild(tr);
-    }
-
-    // set focus view
-    setCardView(focus);
-
-    // show modal
-    modalBackdrop.style.display = "flex";
-  }
-
-  function closeCard() {
-    modalBackdrop.style.display = "none";
-    currentCardItemId = null;
-  }
-
-  function setCardView(view) {
-    currentCardFocus = view;
-    document.querySelectorAll(".segbtn").forEach(b=> b.classList.toggle("active", b.getAttribute("data-view")===view));
-    document.getElementById("cardView_summary").classList.toggle("hide", view!=="summary");
-    document.getElementById("cardView_picked").classList.toggle("hide", view!=="picked");
-    document.getElementById("cardView_audit").classList.toggle("hide", view!=="audit");
-  }
 
   // ---------- Kit search (manual input + suggestions) ----------
   function syncKitDropdownWithSearch() {
     const q = normalize(document.getElementById("kitSearch").value);
     const kitItem = document.getElementById("kitItem");
+    if (!q || !kitItem.options.length) return;
 
-    if (!q) return;
-
-    // find best match among options
     const options = [...kitItem.options];
     const found = options.find(o => normalize(o.textContent).includes(q));
     if (found) kitItem.value = found.value;
@@ -642,7 +655,6 @@
       kitItem.appendChild(opt);
     }
 
-    // keep selection if possible
     if ([...kitItem.options].some(o=>o.value===current)) kitItem.value = current;
   }
 
@@ -668,7 +680,6 @@
     });
     save(LS_KEYS.kit, kitTx);
 
-    // qty sign in audit: PICK => negative, RETURN => positive
     const auditQty = (action === "PICK") ? -qty : +qty;
 
     addAudit({
@@ -691,7 +702,6 @@
     kitTx.splice(idx,1);
     save(LS_KEYS.kit, kitTx);
 
-    // Undo should reverse the last effect
     const undoQty = (t.action === "PICK") ? +Number(t.qty) : -Number(t.qty);
 
     addAudit({
@@ -718,6 +728,73 @@
     rerenderAll();
   }
 
+  // Admin: Add stock only (incoming)
+  function applyAddStock() {
+    const itemId = document.getElementById("adjItem").value;
+    const qty = Math.max(1, Number(document.getElementById("adjQty").value || 1));
+    const user = document.getElementById("adjUser").value.trim() || "User";
+    const comment = document.getElementById("adjComment").value.trim();
+    const item = warehouse.find(x=>x.id===itemId);
+    if (!item) return;
+
+    item.onHand = Number(item.onHand) + qty;
+    save(LS_KEYS.wh, warehouse);
+
+    addAudit({
+      ts:new Date().toISOString(),
+      product:item.product,
+      irn:item.irn,
+      lot:item.lot,
+      qty: +qty,
+      user,
+      comment: comment || "Incoming stock"
+    });
+
+    rerenderAll();
+    alert("Stock added.");
+  }
+
+  // Admin: Add NEW material
+  function addNewMaterial() {
+    const product = document.getElementById("newProduct").value.trim();
+    const manufacturer = document.getElementById("newManufacturer").value.trim();
+    const irn = document.getElementById("newIRN").value.trim();
+    const lot = document.getElementById("newLot").value.trim();
+    const expiry = document.getElementById("newExpiry").value.trim();
+    const onHand = Number(document.getElementById("newQty").value || 0);
+    const user = document.getElementById("newUser").value.trim() || "User";
+    const comment = document.getElementById("newComment").value.trim();
+
+    if (!product || !irn || !lot) { alert("Please fill at least Product, IRN, Lot."); return; }
+
+    const nextIdNum = warehouse.length + 1;
+    const id = `WH-${String(nextIdNum).padStart(4,"0")}`;
+
+    warehouse.push({ id, product, manufacturer, irn, lot, expiry, onHand });
+    save(LS_KEYS.wh, warehouse);
+
+    addAudit({
+      ts:new Date().toISOString(),
+      product, irn, lot,
+      qty: +onHand,
+      user,
+      comment: comment || "Added new material"
+    });
+
+    // Clear inputs (optional)
+    document.getElementById("newProduct").value = "";
+    document.getElementById("newManufacturer").value = "";
+    document.getElementById("newIRN").value = "";
+    document.getElementById("newLot").value = "";
+    document.getElementById("newExpiry").value = "";
+    document.getElementById("newQty").value = "1";
+    document.getElementById("newComment").value = "";
+
+    rerenderAll();
+    alert("New material added.");
+  }
+
+  // Admin: Import CSV (optional bulk)
   function importCSV() {
     const text = document.getElementById("csvImport").value.trim();
     if (!text) return alert("Paste CSV first.");
@@ -766,32 +843,6 @@
     return [header, ...lines].join("\n");
   }
 
-  function applyAdjustment() {
-    const itemId = document.getElementById("adjItem").value;
-    const qty = Math.max(1, Number(document.getElementById("adjQty").value || 1));
-    const type = document.getElementById("adjType").value;
-    const user = document.getElementById("adjUser").value.trim() || "User";
-    const comment = document.getElementById("adjComment").value.trim();
-    const item = warehouse.find(x=>x.id===itemId);
-    if (!item) return;
-
-    const delta = (type==="add") ? qty : -qty;
-    item.onHand = Number(item.onHand) + delta;
-    save(LS_KEYS.wh, warehouse);
-
-    addAudit({
-      ts:new Date().toISOString(),
-      product:item.product,
-      irn:item.irn,
-      lot:item.lot,
-      qty: delta,
-      user,
-      comment: comment || (type==="add" ? "Incoming stock" : "Manual subtraction")
-    });
-
-    rerenderAll();
-  }
-
   function exportJSON() {
     const blob = new Blob([JSON.stringify({warehouse, kitTx, auditLog}, null, 2)], {type:"application/json"});
     const a = document.createElement("a");
@@ -829,7 +880,6 @@
     syncKitDropdownWithSearch();
   });
   document.getElementById("kitItem").addEventListener("change", ()=>{
-    // update kitSearch to reflect choice
     const item = warehouse.find(x=>x.id===document.getElementById("kitItem").value);
     if (item) document.getElementById("kitSearch").value = `${item.irn} ${item.product}`;
   });
@@ -839,8 +889,16 @@
   document.getElementById("logSearch").addEventListener("input", renderLog);
 
   document.getElementById("resetAll").addEventListener("click", resetAll);
+
+  document.getElementById("adjBtn").addEventListener("click", applyAddStock);
+  document.getElementById("addNewBtn").addEventListener("click", addNewMaterial);
+
   document.getElementById("importBtn").addEventListener("click", importCSV);
-  document.getElementById("adjBtn").addEventListener("click", applyAdjustment);
+  document.getElementById("copySeed").addEventListener("click", ()=>{
+    navigator.clipboard.writeText(seedCSV());
+    alert("Seed CSV copied to clipboard.");
+  });
+
   document.getElementById("exportJson").addEventListener("click", exportJSON);
   document.getElementById("clearLog").addEventListener("click", ()=>{
     if (!confirm("Clear audit log?")) return;
@@ -848,17 +906,12 @@
     save(LS_KEYS.log, auditLog);
     rerenderAll();
   });
-  document.getElementById("copySeed").addEventListener("click", ()=>{
-    const t = seedCSV();
-    navigator.clipboard.writeText(t);
-    alert("Seed CSV copied to clipboard.");
-  });
 
   // Initial render
   rerenderAll();
   document.getElementById("csvImport").value = seedCSV();
 
-  // Pre-fill kitSearch with first option
+  // Prefill kitSearch
   const first = warehouse[0];
   if (first) document.getElementById("kitSearch").value = `${first.irn} ${first.product}`;
 </script>
